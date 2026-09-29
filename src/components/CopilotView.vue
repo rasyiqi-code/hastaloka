@@ -20,6 +20,7 @@ import {
 import { AIService } from '../services/aiService';
 import { StorageService } from '../services/storage';
 import type { AssessmentResult, DailyReadinessRecord } from '../types/hastaloka';
+import MobileCopilotView from './MobileCopilotView.vue';
 
 const props = defineProps<{
   assessment: AssessmentResult | null;
@@ -307,9 +308,20 @@ function copyMessage(text: string, idx: number) {
 </script>
 
 <template>
-  <div class="space-y-4 sm:space-y-6">
+  <!-- MOBILE VIEW (Standard Mobile Chat UI: Full-Edge, Clean Bubbles, Fixed Input) -->
+  <div class="block md:hidden">
+    <MobileCopilotView
+      :assessment="assessment"
+      :readiness="readiness"
+      :initial-dilemma="initialDilemma"
+      @open-settings="emit('open-settings')"
+    />
+  </div>
+
+  <!-- DESKTOP VIEW (Original Untouched Prodify Layout) -->
+  <div class="hidden md:block space-y-6">
     <!-- Top Header & Mode Switcher -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 pt-4 sm:px-0 sm:pt-0">
+    <div class="flex items-center justify-between gap-4">
       <div>
         <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
           <span>Copilot Strategis Hastaloka</span>
@@ -323,10 +335,10 @@ function copyMessage(text: string, idx: number) {
       </div>
 
       <!-- Segmented Switcher -->
-      <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80 self-start sm:self-auto text-xs shrink-0">
+      <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80 text-xs shrink-0">
         <button
           @click="activeMode = 'simulator'"
-          class="px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+          class="px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
           :class="activeMode === 'simulator' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'"
         >
           <BrainCircuit class="w-3.5 h-3.5" :class="activeMode === 'simulator' ? 'text-[#6366f1]' : 'text-slate-400'" />
@@ -334,7 +346,7 @@ function copyMessage(text: string, idx: number) {
         </button>
         <button
           @click="activeMode = 'chat'"
-          class="px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+          class="px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
           :class="activeMode === 'chat' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'"
         >
           <MessageSquare class="w-3.5 h-3.5" :class="activeMode === 'chat' ? 'text-[#6366f1]' : 'text-slate-400'" />
@@ -343,8 +355,8 @@ function copyMessage(text: string, idx: number) {
       </div>
     </div>
 
-    <!-- UNIFIED CARD CONTAINER (Full edge on mobile, container on desktop) -->
-    <div class="bg-white rounded-none sm:rounded-3xl border-0 sm:border border-slate-200/90 shadow-none sm:shadow-sm px-4 py-5 sm:p-8 border-t border-b sm:border-t-0 sm:border-b-0">
+    <!-- UNIFIED CARD CONTAINER -->
+    <div class="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-8">
       
       <!-- MODE 1: DECISION SIMULATOR -->
       <div v-if="activeMode === 'simulator'" class="space-y-6">
@@ -403,19 +415,22 @@ function copyMessage(text: string, idx: number) {
             </div>
           </div>
 
-          <!-- Pilihan Cepat (Kecil di Bawah Textarea) -->
+          <!-- Pilihan Cepat (Horizontal Swipe on Mobile) -->
           <div class="space-y-1.5 pt-0.5">
-            <div class="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              <Sparkles class="w-3 h-3 text-indigo-500" />
-              <span>Pilihan Cepat:</span>
+            <div class="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              <span class="flex items-center gap-1.5">
+                <Sparkles class="w-3 h-3 text-indigo-500" />
+                <span>Pilihan Cepat:</span>
+              </span>
+              <span class="text-[10px] text-slate-400 sm:hidden">Geser →</span>
             </div>
             
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1 -mx-4 px-4 sm:mx-0 sm:px-0">
               <button
                 v-for="(item, idx) in presetDilemmas"
                 :key="idx"
                 @click="selectPreset(item.text)"
-                class="px-3 py-1.5 rounded-full border text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs group"
+                class="px-3 py-1.5 rounded-full border text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs group shrink-0 whitespace-nowrap active:scale-95"
                 :class="
                   dilemmaInput === item.text
                     ? 'border-[#6366f1] bg-[#f5f3ff] text-indigo-700 font-bold ring-1 ring-[#6366f1]'
@@ -430,11 +445,11 @@ function copyMessage(text: string, idx: number) {
           </div>
 
           <!-- Action Button Row with Solid Vibrant Button -->
-          <div class="flex items-center justify-between pt-2">
+          <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2.5 pt-2 pb-4 sm:pb-0">
             <button
               v-if="dilemmaInput || simulationResult"
               @click="clearSimulator"
-              class="px-4 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+              class="w-full sm:w-auto px-4 py-2.5 rounded-xl sm:rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs active:scale-95"
             >
               <RotateCcw class="w-3.5 h-3.5" />
               <span>Bersihkan Formulir</span>
@@ -444,7 +459,7 @@ function copyMessage(text: string, idx: number) {
             <button
               @click="runSimulation"
               :disabled="!dilemmaInput.trim() || isSimulating"
-              class="btn-exec-primary px-7 py-3 rounded-full text-xs font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-300 hover:shadow-lg hover:shadow-indigo-400 transition-all"
+              class="w-full sm:w-auto btn-exec-primary px-7 py-3.5 sm:py-3 rounded-xl sm:rounded-full text-xs font-bold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-300 hover:shadow-lg hover:shadow-indigo-400 transition-all active:scale-98 shrink-0"
             >
               <Zap class="w-4 h-4 text-white fill-white" />
               <span v-if="!isSimulating">Jalankan Simulasi Keputusan (AI Multi-Layer)</span>
@@ -616,19 +631,22 @@ function copyMessage(text: string, idx: number) {
             </div>
           </div>
 
-          <!-- Pilihan Cepat (Kecil di Bawah Textarea) -->
+          <!-- Pilihan Cepat (Horizontal Swipe on Mobile) -->
           <div class="space-y-1.5 pt-0.5">
-            <div class="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              <Sparkles class="w-3 h-3 text-indigo-500" />
-              <span>Pilihan Cepat:</span>
+            <div class="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              <span class="flex items-center gap-1.5">
+                <Sparkles class="w-3 h-3 text-indigo-500" />
+                <span>Pilihan Cepat:</span>
+              </span>
+              <span class="text-[10px] text-slate-400 sm:hidden">Geser →</span>
             </div>
             
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1 -mx-4 px-4 sm:mx-0 sm:px-0">
               <button
                 v-for="(sp, idx) in suggestedChatPrompts"
                 :key="idx"
                 @click="selectChatPrompt(sp)"
-                class="px-3 py-1.5 rounded-full border text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs group"
+                class="px-3 py-1.5 rounded-full border text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs group shrink-0 whitespace-nowrap active:scale-95"
                 :class="
                   chatInput === sp
                     ? 'border-[#6366f1] bg-[#f5f3ff] text-indigo-700 font-bold ring-1 ring-[#6366f1]'
@@ -643,11 +661,11 @@ function copyMessage(text: string, idx: number) {
           </div>
 
           <!-- Action Button Row with Solid Vibrant Button -->
-          <div class="flex items-center justify-between pt-2">
+          <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2.5 pt-2 pb-4 sm:pb-0">
             <button
               v-if="chatMessages.length > 1"
               @click="chatSubTab = 'conversation'"
-              class="text-indigo-600 hover:text-indigo-800 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+              class="w-full sm:w-auto text-indigo-600 hover:text-indigo-800 text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer transition-colors py-2"
             >
               <span>Lihat Sesi Obrolan Aktif ({{ chatMessages.length }}) →</span>
             </button>
@@ -656,7 +674,7 @@ function copyMessage(text: string, idx: number) {
             <button
               @click="sendChatMessage"
               :disabled="!chatInput.trim() || isChatLoading"
-              class="btn-exec-primary px-7 py-3 rounded-full text-xs font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-300 hover:shadow-lg hover:shadow-indigo-400 transition-all"
+              class="w-full sm:w-auto btn-exec-primary px-7 py-3.5 sm:py-3 rounded-xl sm:rounded-full text-xs font-bold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-300 hover:shadow-lg hover:shadow-indigo-400 transition-all active:scale-98 shrink-0"
             >
               <Send class="w-4 h-4 text-white" />
               <span v-if="!isChatLoading">Kirim ke Copilot Strategis</span>

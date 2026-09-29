@@ -205,7 +205,10 @@ function handleQuickSimulate(text: string) {
       </header>
 
       <!-- Main Canvas Scroll Area -->
-      <main class="flex-1 p-0 sm:p-8 lg:p-10 pb-24 sm:pb-8 lg:pb-10 overflow-y-auto">
+      <main
+        class="flex-1 p-0 sm:p-8 lg:p-10 sm:pb-8 lg:pb-10"
+        :class="activeTab === 'copilot' ? 'pb-16 overflow-hidden md:overflow-y-auto' : 'pb-36 overflow-y-auto'"
+      >
         <!-- LOCKED DASHBOARD STATE (Saat Start dari 0 / Belum Ada Asesmen) -->
         <div v-if="!currentAssessment" class="max-w-xl mx-auto py-12 px-4 text-center space-y-6">
           <div class="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center mx-auto shadow-sm">

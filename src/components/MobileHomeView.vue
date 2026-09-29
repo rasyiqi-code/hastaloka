@@ -174,29 +174,41 @@ const calendarDays = [
           <Activity class="w-4 h-4 text-indigo-600" />
           <span class="text-sm font-bold text-slate-900">Agenda & Kesiapan Keputusan (Rt)</span>
         </div>
-        <span class="text-[11px] font-mono font-bold text-emerald-700">
-          {{ readiness.status }} ({{ readiness.rt }}%)
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          Status Harian
         </span>
       </div>
 
-      <!-- Status Info Rows -->
-      <div class="space-y-2 text-xs">
-        <div class="flex items-start justify-between gap-3">
-          <div class="flex items-center gap-2 font-bold text-slate-900">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-            <span>Indeks Kesiapan Biologis:</span>
+      <!-- Status Info Rows (Vertical Stacking to Prevent Text Squishing) -->
+      <div class="space-y-2.5 text-xs">
+        <div class="space-y-1">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5 font-bold text-slate-900">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse"></span>
+              <span>Indeks Kesiapan Biologis</span>
+            </div>
+            <span class="font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px] border border-emerald-200/80">
+              {{ readiness.status }} • {{ readiness.rt }}%
+            </span>
           </div>
-          <span class="text-slate-600 text-right">{{ readiness.recommendation }}</span>
+          <p class="text-slate-600 leading-relaxed text-[11px] pl-3.5">
+            {{ readiness.recommendation }}
+          </p>
         </div>
 
-        <div class="flex items-center justify-between gap-3 pt-1 border-t border-slate-100">
-          <div class="flex items-center gap-2 font-bold text-slate-900">
-            <Clock class="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-            <span>Jam Emas Sirkadian:</span>
+        <div class="space-y-1 pt-2 border-t border-slate-100">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5 font-bold text-slate-900">
+              <Clock class="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+              <span>Jam Emas Sirkadian</span>
+            </div>
+            <span class="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded text-[11px] border border-indigo-200/80">
+              {{ assessment?.chronotype === 'owl' ? '14:00 – 18:30 WIB' : '08:30 – 12:00 WIB' }}
+            </span>
           </div>
-          <span class="font-mono font-bold text-indigo-700">
-            {{ assessment?.chronotype === 'owl' ? '14:00 – 18:30 WIB' : '08:30 – 12:00 WIB' }}
-          </span>
+          <p class="text-slate-500 text-[11px] leading-relaxed pl-5">
+            Waktu terbaik negosiasi, presentasi penting, atau keputusan komitmen modal.
+          </p>
         </div>
       </div>
 
