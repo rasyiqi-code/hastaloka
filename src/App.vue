@@ -16,17 +16,21 @@ import type { AssessmentResult } from './types/hastaloka';
 
 import {
   Sparkles,
-  Menu,
   Compass,
   Lock,
   ShieldAlert,
   CheckCircle2,
   Info,
-  Settings
+  Settings,
+  MessageSquare,
+  Zap,
+  RotateCcw
 } from '@lucide/vue';
 
 // 3 Tab Utama: Home, Copilot, Insight
 const activeTab = ref<'home' | 'insight' | 'copilot'>('home');
+const copilotMode = ref<'chat' | 'simulator'>('chat');
+const copilotViewRef = ref<any>(null);
 const currentAssessment = ref<AssessmentResult | null>(null);
 const historyList = ref<AssessmentResult[]>([]);
 
@@ -160,48 +164,94 @@ function handleQuickSimulate(text: string) {
         class="md:hidden sticky top-0 z-30 flex items-center justify-between px-3.5 py-2.5 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-2xs"
         style="padding-top: max(env(safe-area-inset-top, 0px), 0.65rem);"
       >
-        <!-- Brand Logo & Version -->
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
-            <Compass class="w-4 h-4 text-white" />
+        <!-- IF COPILOT TAB ACTIVE ON MOBILE: Native Chat App Bar with Switcher & Reset -->
+        <template v-if="activeTab === 'copilot'">
+          <div class="flex items-center gap-1.5 flex-1 min-w-0">
+            <!-- Mode Switcher in Header (Pilihan Obrolan Bebas vs Bedah Keputusan) -->
+            <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-xl border border-slate-200/90 text-xs flex-1 max-w-[280px]">
+              <button
+                @click="copilotMode = 'chat'"
+                class="flex-1 py-1.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer text-xs"
+                :class="copilotMode === 'chat' ? 'bg-white text-indigo-700 font-bold shadow-xs' : 'text-slate-600'"
+              >
+                <MessageSquare class="w-3.5 h-3.5" />
+                <span class="whitespace-nowrap">Obrolan Bebas</span>
+              </button>
+              <button
+                @click="copilotMode = 'simulator'"
+                class="flex-1 py-1.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer text-xs"
+                :class="copilotMode === 'simulator' ? 'bg-white text-indigo-700 font-bold shadow-xs' : 'text-slate-600'"
+              >
+                <Zap class="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                <span class="whitespace-nowrap">Bedah Keputusan</span>
+              </button>
+            </div>
           </div>
-          <div class="flex items-baseline gap-1.5">
-            <span class="font-black text-sm text-slate-900 font-sans tracking-tight">HASTALOKA</span>
-            <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/80">v2.0</span>
+
+          <!-- Reset Icon Button & Settings -->
+          <div class="flex items-center gap-1 shrink-0 ml-1.5">
+            <button
+              @click="copilotViewRef?.resetChat()"
+              class="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer border border-slate-200/80 bg-slate-50 active:scale-95"
+              title="Bersihkan Obrolan"
+            >
+              <RotateCcw class="w-3.5 h-3.5" />
+            </button>
+            <button
+              @click="isAISettingsModalOpen = true"
+              class="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer active:scale-95"
+              title="Pengaturan AI & Kunci API"
+            >
+              <Settings class="w-4 h-4" />
+            </button>
           </div>
-        </div>
+        </template>
 
-        <!-- Right Quick Actions -->
-        <div class="flex items-center gap-1.5">
-          <!-- User Archetype Badge (Clickable to open profile/re-test) -->
-          <button
-            v-if="currentAssessment"
-            @click="isAssessmentModalOpen = true"
-            class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200/80 text-xs font-bold text-slate-800 transition-colors cursor-pointer border border-slate-200/80 shadow-2xs active:scale-95"
-            title="Klik untuk lihat / tes ulang profil"
-          >
-            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-            <span class="truncate max-w-[90px] text-[11px]">{{ currentAssessment.primaryArchetype.name }}</span>
-          </button>
+        <!-- OTHER TABS (HOME, INSIGHT) -->
+        <template v-else>
+          <!-- Brand Logo & Version -->
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+              <Compass class="w-4 h-4 text-white" />
+            </div>
+            <div class="flex items-baseline gap-1.5">
+              <span class="font-black text-sm text-slate-900 font-sans tracking-tight">HASTALOKA</span>
+              <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/80">v2.0</span>
+            </div>
+          </div>
 
-          <!-- Settings (AI Key & Engine Config) -->
-          <button
-            @click="isAISettingsModalOpen = true"
-            class="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer active:scale-95"
-            title="Pengaturan AI & Kunci API"
-          >
-            <Settings class="w-4 h-4" />
-          </button>
+          <!-- Right Quick Actions -->
+          <div class="flex items-center gap-1.5">
+            <!-- User Archetype Badge (Clickable to open profile/re-test) -->
+            <button
+              v-if="currentAssessment"
+              @click="isAssessmentModalOpen = true"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200/80 text-xs font-bold text-slate-800 transition-colors cursor-pointer border border-slate-200/80 shadow-2xs active:scale-95"
+              title="Klik untuk lihat / tes ulang profil"
+            >
+              <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+              <span class="truncate max-w-[90px] text-[11px]">{{ currentAssessment.primaryArchetype.name }}</span>
+            </button>
 
-          <!-- Info / About -->
-          <button
-            @click="isAboutModalOpen = true"
-            class="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer active:scale-95"
-            title="Tentang Hastaloka"
-          >
-            <Info class="w-4 h-4" />
-          </button>
-        </div>
+            <!-- Settings (AI Key & Engine Config) -->
+            <button
+              @click="isAISettingsModalOpen = true"
+              class="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer active:scale-95"
+              title="Pengaturan AI & Kunci API"
+            >
+              <Settings class="w-4 h-4" />
+            </button>
+
+            <!-- Info / About -->
+            <button
+              @click="isAboutModalOpen = true"
+              class="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer active:scale-95"
+              title="Tentang Hastaloka"
+            >
+              <Info class="w-4 h-4" />
+            </button>
+          </div>
+        </template>
       </header>
 
       <!-- Main Canvas Scroll Area -->
@@ -283,9 +333,12 @@ function handleQuickSimulate(text: string) {
         <!-- 3. COPILOT VIEW -->
         <CopilotView
           v-else-if="activeTab === 'copilot'"
+          ref="copilotViewRef"
           :assessment="currentAssessment"
           :readiness="readiness"
           :initial-dilemma="initialDilemmaForCopilot"
+          :mode="copilotMode"
+          @update:mode="copilotMode = $event"
           @open-settings="isAISettingsModalOpen = true"
         />
       </main>

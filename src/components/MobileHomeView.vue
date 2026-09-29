@@ -2,7 +2,6 @@
 import { computed } from 'vue';
 import {
   Sparkles,
-  ArrowRight,
   Layers,
   CalendarDays,
   Check,

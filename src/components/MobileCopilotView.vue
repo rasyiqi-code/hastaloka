@@ -2,31 +2,28 @@
 import { ref, computed, watch, nextTick, onMounted } from 'vue';
 import { marked } from 'marked';
 import {
-  BrainCircuit,
-  MessageSquare,
   Zap,
-  RotateCcw,
   Send,
-  User,
   Copy,
   Check,
-  Sparkles,
-  Settings,
-  ShieldCheck,
-  ChevronRight
+  Sparkles
 } from '@lucide/vue';
 import { AIService } from '../services/aiService';
 import { StorageService } from '../services/storage';
 import type { AssessmentResult, DailyReadinessRecord } from '../types/hastaloka';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   assessment: AssessmentResult | null;
   readiness: { rt: number; status: string; recommendation: string };
   initialDilemma?: string;
-}>();
+  mode?: 'chat' | 'simulator';
+}>(), {
+  mode: 'chat'
+});
 
 const emit = defineEmits<{
   (e: 'open-settings'): void;
+  (e: 'update:mode', val: 'chat' | 'simulator'): void;
 }>();
 
 marked.setOptions({
@@ -46,11 +43,18 @@ function renderMarkdown(content: string | null | undefined): string {
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
-  type?: 'chat' | 'simulation';
+  type?: 'chat' | 'simulator';
   timestamp?: string;
 }
 
-const activeMode = ref<'chat' | 'simulator'>('chat');
+const localMode = ref<'chat' | 'simulator'>(props.mode);
+const activeMode = computed({
+  get: () => props.mode || localMode.value,
+  set: (val: 'chat' | 'simulator') => {
+    localMode.value = val;
+    emit('update:mode', val);
+  }
+});
 const messageContainer = ref<HTMLElement | null>(null);
 const inputField = ref<HTMLTextAreaElement | null>(null);
 const inputText = ref('');
@@ -215,72 +219,14 @@ function copyMessage(text: string, idx: number) {
     copiedIdx.value = null;
   }, 2000);
 }
+
+defineExpose({
+  handleReset
+});
 </script>
 
 <template>
   <div class="flex flex-col h-[calc(100dvh-120px)] bg-slate-50 overflow-hidden">
-    
-    <!-- TOP CHAT HEADER BAR (Compact Mobile Standard) -->
-    <div class="bg-white border-b border-slate-200/90 px-4 py-2.5 flex items-center justify-between shrink-0 shadow-2xs">
-      <div class="flex items-center gap-2.5 min-w-0">
-        <div class="relative shrink-0">
-          <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white flex items-center justify-center font-bold shadow-xs">
-            <Sparkles class="w-4 h-4 text-white" />
-          </div>
-          <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
-        </div>
-        <div class="min-w-0">
-          <div class="flex items-center gap-1.5">
-            <h2 class="text-xs font-bold text-slate-900 truncate">Copilot Strategis</h2>
-            <span class="text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200/80">AI</span>
-          </div>
-          <p class="text-[10px] text-slate-500 truncate">
-            {{ assessment ? assessment.primaryArchetype.name : 'Eksekutif' }} • Rt: {{ readiness.rt }}%
-          </p>
-        </div>
-      </div>
-
-      <!-- Header Action Buttons -->
-      <div class="flex items-center gap-1 shrink-0">
-        <button
-          @click="handleReset"
-          class="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-          title="Bersihkan Obrolan"
-        >
-          <RotateCcw class="w-3.5 h-3.5" />
-        </button>
-        <button
-          @click="emit('open-settings')"
-          class="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-          title="Pengaturan AI"
-        >
-          <Settings class="w-3.5 h-3.5" />
-        </button>
-      </div>
-    </div>
-
-    <!-- MODE SWITCHER (Segmented Pills Under Header) -->
-    <div class="bg-white/80 backdrop-blur-sm border-b border-slate-200/80 px-3 py-1.5 shrink-0 flex items-center justify-center">
-      <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-full border border-slate-200/80 text-xs">
-        <button
-          @click="activeMode = 'chat'"
-          class="flex-1 py-1.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer text-xs"
-          :class="activeMode === 'chat' ? 'bg-white text-indigo-700 font-bold shadow-xs' : 'text-slate-600'"
-        >
-          <MessageSquare class="w-3.5 h-3.5" />
-          <span>Obrolan Bebas</span>
-        </button>
-        <button
-          @click="activeMode = 'simulator'"
-          class="flex-1 py-1.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer text-xs"
-          :class="activeMode === 'simulator' ? 'bg-white text-indigo-700 font-bold shadow-xs' : 'text-slate-600'"
-        >
-          <Zap class="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-          <span>Bedah Keputusan</span>
-        </button>
-      </div>
-    </div>
-
     <!-- CHAT MESSAGES SCROLL AREA (Full-edge stream) -->
     <div
       ref="messageContainer"

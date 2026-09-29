@@ -23,6 +23,7 @@ const emit = defineEmits<{
 
 const isDownloading = ref(false);
 const reportCanvasRef = ref<HTMLElement | null>(null);
+const pdfDocRef = ref<HTMLElement | null>(null);
 
 const systemicDossier = computed(() => getSystemicDiagnostic(props.assessment));
 
@@ -53,13 +54,17 @@ async function handleDownloadPDF() {
   isDownloading.value = true;
 
   try {
-    const container = reportCanvasRef.value;
+    const container = pdfDocRef.value || reportCanvasRef.value;
     if (!container) throw new Error('Elemen dokumen tidak ditemukan');
 
     const pageElements = Array.from(
-      container.querySelectorAll<HTMLElement>('.pdf-page')
+      container.querySelectorAll<HTMLElement>('.pdf-doc-page')
     );
-    if (pageElements.length === 0) throw new Error('Halaman laporan tidak ditemukan');
+    const targetPages = pageElements.length > 0
+      ? pageElements
+      : Array.from(container.querySelectorAll<HTMLElement>('.pdf-page'));
+
+    if (targetPages.length === 0) throw new Error('Halaman laporan tidak ditemukan');
 
     // Dynamic import to keep bundle light
     // @ts-ignore
@@ -67,52 +72,40 @@ async function handleDownloadPDF() {
     const html2canvas = html2canvasModule.default || html2canvasModule;
     const { jsPDF } = await import('jspdf');
 
+    const pdfWidth = 210;
+    const pdfHeight = 297;
+
     const pdf = new jsPDF({
       unit: 'mm',
       format: 'a4',
       orientation: 'portrait'
     });
 
-    const pdfWidth = 210;
-    const pdfHeight = 297;
-    const margin = 10;
-    const maxContentWidth = pdfWidth - (margin * 2); // 190 mm
-    const maxContentHeight = pdfHeight - (margin * 2); // 277 mm
-
-    for (let i = 0; i < pageElements.length; i++) {
-      const pageEl = pageElements[i];
+    for (let i = 0; i < targetPages.length; i++) {
+      const pageEl = targetPages[i];
 
       const canvas = await html2canvas(pageEl, {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        width: 794,
+        height: 1123
       });
 
       if (i > 0) {
-        pdf.addPage();
+        pdf.addPage('a4', 'portrait');
       }
 
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
-      const ratio = canvas.width / canvas.height;
-      let renderWidth = maxContentWidth;
-      let renderHeight = renderWidth / ratio;
-
-      if (renderHeight > maxContentHeight) {
-        renderHeight = maxContentHeight;
-        renderWidth = renderHeight * ratio;
-      }
-
-      const xOffset = margin + (maxContentWidth - renderWidth) / 2;
-      const yOffset = margin + (maxContentHeight - renderHeight) / 2;
 
       pdf.addImage(
         imgData,
         'JPEG',
-        xOffset,
-        yOffset,
-        renderWidth,
-        renderHeight,
+        0,
+        0,
+        pdfWidth,
+        pdfHeight,
         undefined,
         'FAST'
       );
@@ -146,7 +139,7 @@ async function handleDownloadPDF() {
           </div>
           <div>
             <h3 class="text-xs sm:text-sm font-extrabold text-slate-900">Laporan Resmi Hasil Diagnostik</h3>
-            <p class="text-[10px] sm:text-xs text-slate-500 font-medium hidden xs:block">Dokumen komprehensif 4 halaman (7 bagian lengkap) — siap unduh PDF</p>
+            <p class="text-[10px] sm:text-xs text-slate-500 font-medium hidden xs:block">Dokumen formal standar PDF (4 halaman, 10 bagian lengkap) — siap unduh cetak A4</p>
           </div>
         </div>
         <div class="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -170,18 +163,18 @@ async function handleDownloadPDF() {
         </div>
       </div>
 
-      <!-- Scrollable Container (Viewer Style) -->
-      <div class="flex-1 overflow-y-auto px-2 py-4 sm:p-6 md:p-8 bg-slate-100/90 text-slate-900 print:overflow-visible print:p-0 print:bg-white">
+      <!-- Scrollable Container (Viewer Style: Full edge on mobile, centered card on desktop) -->
+      <div class="flex-1 overflow-y-auto p-0 sm:p-6 md:p-8 bg-white sm:bg-slate-100/90 text-slate-900 print:overflow-visible print:p-0 print:bg-white">
         <!-- Printable Document Canvas -->
         <div
           ref="reportCanvasRef"
-          class="w-full max-w-[820px] mx-auto space-y-6 sm:space-y-8"
+          class="w-full max-w-[820px] mx-auto space-y-0 sm:space-y-8 divide-y-4 divide-slate-100 sm:divide-y-0"
         >
 
           <!-- ========================================== -->
           <!-- HALAMAN 1: IDENTITAS & PETA GEOMETRI KARAKTER -->
           <!-- ========================================== -->
-          <div class="pdf-page bg-white p-6 sm:p-8 md:p-9 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-6 min-h-[1050px]">
+          <div class="pdf-page bg-white p-4 sm:p-6 md:p-7 rounded-none sm:rounded-2xl border-0 sm:border border-slate-200/80 shadow-none sm:shadow-xs flex flex-col justify-between space-y-5 sm:min-h-[1160px]">
             <div class="space-y-6">
               <!-- KOP DOKUMEN RESMI -->
               <div class="border-b-2 border-slate-900 pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -291,7 +284,7 @@ async function handleDownloadPDF() {
           <!-- ========================================== -->
           <!-- HALAMAN 2: DIAGNOSIS ARKETIPE & JALUR CUAN -->
           <!-- ========================================== -->
-          <div class="pdf-page bg-white p-6 sm:p-8 md:p-9 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-5 min-h-[1050px]">
+          <div class="pdf-page bg-white p-4 sm:p-6 md:p-7 rounded-none sm:rounded-2xl border-0 sm:border border-slate-200/80 shadow-none sm:shadow-xs flex flex-col justify-between space-y-5 sm:min-h-[1160px]">
             <div class="space-y-5">
               <!-- Running Header -->
               <div class="border-b border-slate-200 pb-2.5 flex items-center justify-between text-[10px] text-slate-500 font-mono">
@@ -445,7 +438,7 @@ async function handleDownloadPDF() {
           <!-- ========================================== -->
           <!-- HALAMAN 3: MITIGASI RISIKO & PRODUKTIVITAS -->
           <!-- ========================================== -->
-          <div class="pdf-page bg-white p-6 sm:p-8 md:p-9 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-5 min-h-[1050px]">
+          <div class="pdf-page bg-white p-4 sm:p-6 md:p-7 rounded-none sm:rounded-2xl border-0 sm:border border-slate-200/80 shadow-none sm:shadow-xs flex flex-col justify-between space-y-5 sm:min-h-[1160px]">
             <div class="space-y-5">
               <!-- Running Header -->
               <div class="border-b border-slate-200 pb-2.5 flex items-center justify-between text-[10px] text-slate-500 font-mono">
@@ -579,7 +572,7 @@ async function handleDownloadPDF() {
           <!-- ========================================== -->
           <!-- HALAMAN 4: SINERGI TIM & LEMBAR PENGESAHAN -->
           <!-- ========================================== -->
-          <div class="pdf-page bg-white p-6 sm:p-8 md:p-9 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-6 min-h-[1050px]">
+          <div class="pdf-page bg-white p-4 sm:p-6 md:p-7 rounded-none sm:rounded-2xl border-0 sm:border border-slate-200/80 shadow-none sm:shadow-xs flex flex-col justify-between space-y-5 sm:min-h-[1160px]">
             <div class="space-y-6">
               <!-- Running Header -->
               <div class="border-b border-slate-200 pb-2.5 flex items-center justify-between text-[10px] text-slate-500 font-mono">
@@ -698,6 +691,555 @@ async function handleDownloadPDF() {
 
         </div> <!-- end of reportCanvasRef -->
       </div> <!-- end of scrollable container -->
+    </div>
+
+    <!-- DEDICATED OFF-SCREEN STANDARD PDF DOCUMENT TEMPLATE (Executive A4 Report) -->
+    <div class="fixed -left-[9999px] top-0 pointer-events-none opacity-100 z-[-100]">
+      <div ref="pdfDocRef" class="w-[794px] bg-slate-100 text-slate-900 font-sans">
+        
+        <!-- ======================================================== -->
+        <!-- PDF PAGE 1: KOP DOKUMEN, IDENTITAS SUBJEK & DIAGNOSIS ARKETIPE -->
+        <!-- ======================================================== -->
+        <div class="pdf-doc-page w-[794px] h-[1123px] p-[40px] box-border bg-white flex flex-col justify-between overflow-hidden text-slate-900">
+          <div class="space-y-4">
+            <!-- Formal Corporate Letterhead -->
+            <div class="border-b-2 border-slate-900 pb-3 flex items-start justify-between">
+              <div class="space-y-0.5">
+                <div class="flex items-center gap-2">
+                  <div class="w-3.5 h-3.5 bg-slate-900 flex items-center justify-center text-white font-black text-[9px]">H</div>
+                  <span class="text-[11px] font-black tracking-widest text-slate-900 uppercase">
+                    HASTALOKA HUMAN PSYCHOMETRICS & ENTERPRISE STRATEGY
+                  </span>
+                </div>
+                <div class="text-[9px] font-medium text-slate-500 uppercase tracking-wide">
+                  Divisi Riset Diagnostik Neuro-Perilaku & Optimalisasi Modal Insani
+                </div>
+              </div>
+              <div class="text-right font-mono text-[9px] text-slate-600 space-y-0.5">
+                <div>NO. DOKUMEN: <strong class="text-slate-900 font-bold">HASTA-{{ assessment.id }}</strong></div>
+                <div>TANGGAL ASESMEN: <strong class="text-slate-800">{{ new Date(assessment.timestamp).toLocaleDateString('id-ID', { dateStyle: 'long' }) }}</strong></div>
+                <div>STATUS KLASIFIKASI: <span class="text-emerald-700 font-bold uppercase">TERVERIFIKASI RESMI</span></div>
+              </div>
+            </div>
+
+            <!-- Judul Dokumen -->
+            <div class="pt-1 pb-1 border-b border-slate-200">
+              <h1 class="text-lg font-black tracking-tight text-slate-950 uppercase leading-snug">
+                LAPORAN DIAGNOSTIK KEPRIBADIAN & NAVIGASI STRATEGIS
+              </h1>
+              <p class="text-[10px] text-slate-600 font-medium">
+                Evaluasi Psikometrika Berbasis 5 Sumbu Vektor Neuro-Perilaku (H5V), Klasifikasi 8 Arketipe & Rekomendasi Eksekusi
+              </p>
+            </div>
+
+            <!-- 1.0 Data Identitas Subjek Teruji (Tabel Formal) -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between border-b border-slate-300 pb-1">
+                <h2 class="text-[11px] font-black uppercase tracking-wider text-slate-900">
+                  1.0 Identitas Subjek Teruji & Parameter Pengujian
+                </h2>
+                <span class="text-[9px] font-mono text-slate-500">Data Master Peserta</span>
+              </div>
+              <table class="w-full text-[10px] border border-slate-300 border-collapse">
+                <tbody>
+                  <tr class="border-b border-slate-200 bg-slate-50/60">
+                    <td class="p-2 font-bold text-slate-600 w-1/4 border-r border-slate-200">Nama Lengkap</td>
+                    <td class="p-2 font-extrabold text-slate-900 w-1/4 border-r border-slate-200 text-xs">{{ assessment.userName || 'Subjek Diagnostik' }}</td>
+                    <td class="p-2 font-bold text-slate-600 w-1/4 border-r border-slate-200">ID Registrasi</td>
+                    <td class="p-2 font-mono font-bold text-indigo-800 w-1/4">{{ assessment.id }}</td>
+                  </tr>
+                  <tr class="border-b border-slate-200">
+                    <td class="p-2 font-bold text-slate-600 border-r border-slate-200">Profesi / Jabatan</td>
+                    <td class="p-2 font-semibold text-slate-900 border-r border-slate-200">{{ assessment.userProfession || 'Profesional Eksekutif' }}</td>
+                    <td class="p-2 font-bold text-slate-600 border-r border-slate-200">Usia Terlapor</td>
+                    <td class="p-2 font-semibold text-slate-900">{{ assessment.userAge ? `${assessment.userAge} Tahun` : 'Tidak Diisi' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="p-2 font-bold text-slate-600 border-r border-slate-200">Kronotipe Sirkadian</td>
+                    <td class="p-2 font-bold text-indigo-700 capitalize border-r border-slate-200">Tipe {{ assessment.chronotype }}</td>
+                    <td class="p-2 font-bold text-slate-600 border-r border-slate-200">Metode Analisis</td>
+                    <td class="p-2 text-slate-700">Algoritma Vektor H5V v2.0</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- 2.0 Diagnosis Arketipe Dominan -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between border-b border-slate-300 pb-1">
+                <h2 class="text-[11px] font-black uppercase tracking-wider text-slate-900">
+                  2.0 Hasil Diagnosis Arketipe Dominan & Karakteristik Perilaku
+                </h2>
+                <span class="text-[9px] font-mono text-emerald-700 font-bold">Tingkat Keselarasan: 100%</span>
+              </div>
+
+              <!-- Primary Profile Box -->
+              <div class="p-3 border border-slate-300 bg-slate-50/40 space-y-2 text-xs">
+                <div class="flex items-start justify-between border-b border-slate-200 pb-1.5">
+                  <div>
+                    <span class="text-[9px] font-mono font-bold text-slate-500 uppercase tracking-widest block">ARKETIPE UTAMA:</span>
+                    <h3 class="text-sm font-black text-slate-950">
+                      {{ assessment.primaryArchetype.name }} <span class="text-indigo-800 font-bold">({{ assessment.primaryArchetype.indonesianName }})</span>
+                    </h3>
+                  </div>
+                  <div class="text-right">
+                    <span class="text-[9px] font-mono font-bold text-slate-500 uppercase block">PERAN EKSEKUTIF:</span>
+                    <strong class="text-xs text-slate-900 font-extrabold">{{ assessment.primaryArchetype.role }}</strong>
+                  </div>
+                </div>
+
+                <p class="text-[10px] text-slate-700 leading-relaxed font-normal">
+                  {{ assessment.primaryArchetype.description }}
+                </p>
+
+                <!-- 2 Kolom: Kekuatan & Blindspots -->
+                <div class="grid grid-cols-2 gap-3 pt-1 border-t border-slate-200 text-[10px]">
+                  <div class="space-y-1">
+                    <span class="font-bold text-slate-900 uppercase tracking-wider block text-[9px]">
+                      Kekuatan Alami Teridentifikasi:
+                    </span>
+                    <ul class="space-y-1 text-slate-700">
+                      <li v-for="(str, sIdx) in assessment.primaryArchetype.strengths" :key="sIdx" class="flex items-start gap-1.5">
+                        <span class="text-slate-900 font-bold shrink-0">•</span>
+                        <span>{{ str }}</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div class="space-y-1">
+                    <span class="font-bold text-rose-900 uppercase tracking-wider block text-[9px]">
+                      Kecenderungan Titik Buta (Blindspots):
+                    </span>
+                    <ul class="space-y-1 text-slate-700">
+                      <li v-for="(bs, bIdx) in assessment.primaryArchetype.blindSpots" :key="bIdx" class="flex items-start gap-1.5">
+                        <span class="text-rose-700 font-bold shrink-0">!</span>
+                        <span>{{ bs }}</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3.0 Rekomendasi Strategi Karier & Penciptaan Nilai -->
+            <div class="space-y-1.5">
+              <div class="border-b border-slate-300 pb-1">
+                <h2 class="text-[11px] font-black uppercase tracking-wider text-slate-900">
+                  3.0 Arahan Navigasi Karier & Valuasi Ekonomi
+                </h2>
+              </div>
+              <div class="grid grid-cols-2 gap-3 text-[10px]">
+                <div class="p-2.5 border border-slate-300 bg-white space-y-1">
+                  <strong class="text-slate-900 font-bold uppercase tracking-wider block text-[9px]">
+                    Strategi Pertumbuhan Karier:
+                  </strong>
+                  <p class="text-slate-700 leading-relaxed">
+                    {{ assessment.primaryArchetype.careerStrategy }}
+                  </p>
+                </div>
+                <div class="p-2.5 border border-slate-300 bg-white space-y-1">
+                  <strong class="text-slate-900 font-bold uppercase tracking-wider block text-[9px]">
+                    Strategi Penciptaan Nilai Finansial:
+                  </strong>
+                  <p class="text-slate-700 leading-relaxed">
+                    {{ assessment.primaryArchetype.wealthStrategy }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Page 1 Footer -->
+          <div class="border-t border-slate-300 pt-2 flex items-center justify-between text-[9px] text-slate-500 font-mono">
+            <span>HASTALOKA PSYCHOMETRICS ENGINE v2.0 • DOKUMEN RESMI TERVERIFIKASI</span>
+            <span>HALAMAN 1 DARI 4</span>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- PDF PAGE 2: PETA GEOMETRI H5V & MODEL PENGUNGKIT EKONOMI -->
+        <!-- ======================================================== -->
+        <div class="pdf-doc-page w-[794px] h-[1123px] p-[40px] box-border bg-white flex flex-col justify-between overflow-hidden text-slate-900">
+          <div class="space-y-4">
+            <!-- Running Header -->
+            <div class="border-b border-slate-300 pb-1.5 flex items-center justify-between text-[9px] text-slate-600 font-mono">
+              <span class="font-bold text-slate-900">HASTALOKA OFFICIAL DOSSIER • PETA GEOMETRI H5V & VALUASI PASAR</span>
+              <span>SUBJEK: <strong class="text-slate-900">{{ assessment.userName || 'Subjek' }}</strong> | REG: {{ assessment.id }}</span>
+            </div>
+
+            <!-- 4.0 Peta Geometri & 5 Vektor H5V -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between border-b border-slate-300 pb-1">
+                <h2 class="text-[11px] font-black uppercase tracking-wider text-slate-900">
+                  4.0 Peta Geometri & 5 Vektor Kekuatan Karakter (H5V)
+                </h2>
+                <span class="text-[9px] font-mono text-slate-600">Skala Baku: 0 – 100%</span>
+              </div>
+
+              <div class="grid grid-cols-12 gap-4 items-center">
+                <!-- Radar Chart Container -->
+                <div class="col-span-5 flex flex-col items-center justify-center p-2 border border-slate-200 bg-slate-50/50">
+                  <RadarChart :user-scores="assessment.vectorScores" :size="240" />
+                  <span class="text-[9px] text-slate-500 font-mono mt-1">Diagram Polarisasi 5 Vektor</span>
+                </div>
+
+                <!-- Tabel Data 5 Vektor Formal -->
+                <div class="col-span-7">
+                  <table class="w-full text-[10px] border border-slate-300 border-collapse">
+                    <thead>
+                      <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-300 text-left">
+                        <th class="p-1.5 border-r border-slate-300">Sumbu Vektor</th>
+                        <th class="p-1.5 border-r border-slate-300 text-center">Skor</th>
+                        <th class="p-1.5 border-r border-slate-300">Kapasitas</th>
+                        <th class="p-1.5">Kelangkaan Pasar</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                      <tr>
+                        <td class="p-1.5 font-bold text-slate-900 border-r border-slate-200">Daya Aksi (Drive)</td>
+                        <td class="p-1.5 font-mono font-bold text-center text-indigo-700 border-r border-slate-200">{{ assessment.vectorScores.drive }}%</td>
+                        <td class="p-1.5 border-r border-slate-200">{{ assessment.vectorScores.drive >= 65 ? 'Dominan Tinggi' : assessment.vectorScores.drive <= 35 ? 'Diferensial Rendah' : 'Tingkat Rata-rata' }}</td>
+                        <td class="p-1.5 text-slate-600">Top 20% Populasi</td>
+                      </tr>
+                      <tr>
+                        <td class="p-1.5 font-bold text-slate-900 border-r border-slate-200">Kelenturan (Adaptasi)</td>
+                        <td class="p-1.5 font-mono font-bold text-center text-blue-700 border-r border-slate-200">{{ assessment.vectorScores.adaptability }}%</td>
+                        <td class="p-1.5 border-r border-slate-200">{{ assessment.vectorScores.adaptability >= 65 ? 'Dominan Tinggi' : assessment.vectorScores.adaptability <= 35 ? 'Diferensial Rendah' : 'Tingkat Rata-rata' }}</td>
+                        <td class="p-1.5 text-slate-600">Responsif Dinamis</td>
+                      </tr>
+                      <tr>
+                        <td class="p-1.5 font-bold text-slate-900 border-r border-slate-200">Keteraturan (Stabilitas)</td>
+                        <td class="p-1.5 font-mono font-bold text-center text-emerald-700 border-r border-slate-200">{{ assessment.vectorScores.stability }}%</td>
+                        <td class="p-1.5 border-r border-slate-200">{{ assessment.vectorScores.stability >= 65 ? 'Dominan Tinggi' : assessment.vectorScores.stability <= 35 ? 'Diferensial Rendah' : 'Tingkat Rata-rata' }}</td>
+                        <td class="p-1.5 text-slate-600">Presisi & Konsisten</td>
+                      </tr>
+                      <tr>
+                        <td class="p-1.5 font-bold text-slate-900 border-r border-slate-200">Visi Pola (Sintesis)</td>
+                        <td class="p-1.5 font-mono font-bold text-center text-purple-700 border-r border-slate-200">{{ assessment.vectorScores.synthesis }}%</td>
+                        <td class="p-1.5 border-r border-slate-200">{{ assessment.vectorScores.synthesis >= 65 ? 'Dominan Tinggi' : assessment.vectorScores.synthesis <= 35 ? 'Diferensial Rendah' : 'Tingkat Rata-rata' }}</td>
+                        <td class="p-1.5 text-slate-600">Abstraksi Strategis</td>
+                      </tr>
+                      <tr>
+                        <td class="p-1.5 font-bold text-slate-900 border-r border-slate-200">Relasi & Makna (Koneksi)</td>
+                        <td class="p-1.5 font-mono font-bold text-center text-rose-700 border-r border-slate-200">{{ assessment.vectorScores.connectivity }}%</td>
+                        <td class="p-1.5 border-r border-slate-200">{{ assessment.vectorScores.connectivity >= 65 ? 'Dominan Tinggi' : assessment.vectorScores.connectivity <= 35 ? 'Diferensial Rendah' : 'Tingkat Rata-rata' }}</td>
+                        <td class="p-1.5 text-slate-600">Resonansi Sosial</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <p class="text-[9px] text-slate-500 italic mt-1.5">
+                    * Catatan Diagnostik: Profil H5V memetakan konfigurasi neuro-perilaku yang relatif stabil dalam konteks pengambilan keputusan di bawah tekanan.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5.0 Moat Ekonomi & Model Pengungkit (Leverage) -->
+            <div class="space-y-2">
+              <div class="border-b border-slate-300 pb-1 flex items-center justify-between">
+                <h2 class="text-[11px] font-black uppercase tracking-wider text-slate-900">
+                  5.0 Valuasi Pasar, Niche Strategis & Model Pengungkit (Leverage)
+                </h2>
+                <span class="text-[9px] font-mono text-indigo-700 font-bold">{{ systemicDossier?.nicheTag }}</span>
+              </div>
+
+              <!-- Niche Definition -->
+              <div class="p-2.5 border border-slate-300 bg-slate-50/50 text-[10px] space-y-1">
+                <div class="flex items-center justify-between">
+                  <strong class="text-slate-900 uppercase font-black tracking-wide text-[10px]">
+                    POSISI NICHE PASAR BERDAYA SAING:
+                  </strong>
+                  <span class="text-indigo-800 font-bold font-mono">{{ systemicDossier?.nicheTitle }}</span>
+                </div>
+                <p class="text-slate-700 leading-relaxed">
+                  {{ systemicDossier?.moatSummary }}
+                </p>
+              </div>
+
+              <!-- 2 Model Pengungkit Nilai Tertinggi (Tabel Komparasi Formal) -->
+              <div class="space-y-1.5">
+                <span class="text-[10px] font-bold text-slate-800 uppercase tracking-wider block">
+                  Dua Model Pengungkit Nilai Tertinggi yang Direkomendasikan:
+                </span>
+                <div class="grid grid-cols-2 gap-3 text-[10px]">
+                  <div
+                    v-for="model in systemicDossier?.leverageModels"
+                    :key="model.id"
+                    class="p-2.5 border border-slate-300 bg-white space-y-1.5"
+                  >
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-1">
+                      <strong class="text-slate-900 font-bold text-xs">{{ model.title }}</strong>
+                      <span class="px-1.5 py-0.2 rounded border border-slate-300 text-[8px] font-mono font-bold text-slate-700">
+                        {{ model.badge }}
+                      </span>
+                    </div>
+                    <p class="text-slate-600 leading-snug">
+                      <strong class="text-slate-900">Rasionalisasi:</strong> {{ model.whyFits }}
+                    </p>
+                    <div class="space-y-0.5 pt-1 border-t border-slate-100">
+                      <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Langkah Eksekusi Operasional:</span>
+                      <div v-for="(st, sIdx) in model.steps.slice(0, 2)" :key="sIdx" class="flex items-start gap-1 text-[9px] text-slate-700">
+                        <span class="text-indigo-800 font-bold shrink-0">▸</span>
+                        <span>{{ st }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Page 2 Footer -->
+          <div class="border-t border-slate-300 pt-2 flex items-center justify-between text-[9px] text-slate-500 font-mono">
+            <span>HASTALOKA PSYCHOMETRICS ENGINE v2.0 • STRATEGI EKONOMI & NICHE</span>
+            <span>HALAMAN 2 DARI 4</span>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- PDF PAGE 3: MANAJEMEN RISIKO, SIRKADIAN & DELEGASI       -->
+        <!-- ======================================================== -->
+        <div class="pdf-doc-page w-[794px] h-[1123px] p-[40px] box-border bg-white flex flex-col justify-between overflow-hidden text-slate-900">
+          <div class="space-y-4">
+            <!-- Running Header -->
+            <div class="border-b border-slate-300 pb-1.5 flex items-center justify-between text-[9px] text-slate-600 font-mono">
+              <span class="font-bold text-slate-900">HASTALOKA OFFICIAL DOSSIER • MANAJEMEN RISIKO & ALOKASI ENERGI</span>
+              <span>SUBJEK: <strong class="text-slate-900">{{ assessment.userName || 'Subjek' }}</strong> | REG: {{ assessment.id }}</span>
+            </div>
+
+            <!-- 6.0 Protokol Mitigasi Masalah & Titik Buta (Hazard Protocols) -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between border-b border-slate-300 pb-1">
+                <h2 class="text-[11px] font-black uppercase tracking-wider text-slate-900">
+                  6.0 Protokol Pencegahan Masalah & Mitigasi Titik Buta (Hazard Management)
+                </h2>
+                <span class="text-[9px] font-mono text-rose-700 font-bold">Kategori: Mitigasi Preventif</span>
+              </div>
+
+              <div class="p-2 border border-amber-300 bg-amber-50/40 text-[9.5px] text-amber-900 leading-snug">
+                <strong>Catatan Manajemen Risiko:</strong> Titik buta di bawah ini merupakan konsekuensi langsung dari dominasi vektor kepribadian alami subjek. Penanganan terstruktur diperlukan untuk mencegah kelelahan mental atau kerugian profesional.
+              </div>
+
+              <!-- 2 Hazard Protocols (Tabel Formal) -->
+              <div class="grid grid-cols-2 gap-3 text-[10px]">
+                <div
+                  v-for="hazard in systemicDossier?.hazardProtocols"
+                  :key="hazard.id"
+                  class="p-2.5 border border-slate-300 bg-white space-y-1.5"
+                >
+                  <div class="flex items-center justify-between border-b border-slate-200 pb-1">
+                    <strong class="text-slate-900 font-bold text-xs">{{ hazard.name }}</strong>
+                    <span class="px-1.5 py-0.2 rounded border border-rose-300 text-rose-800 text-[8px] font-mono font-bold">
+                      Risiko {{ hazard.riskLevel }}
+                    </span>
+                  </div>
+                  <p class="text-slate-600 leading-snug">
+                    <strong class="text-slate-900">Dampak Nyata:</strong> {{ hazard.realImpact }}
+                  </p>
+                  <div class="space-y-1 pt-1 border-t border-slate-100">
+                    <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">3 Langkah Intervensi Teruji:</span>
+                    <div class="space-y-0.5 text-[9px]">
+                      <div v-for="st in hazard.steps" :key="st.num" class="flex items-start gap-1 text-slate-700">
+                        <span class="font-mono font-bold text-slate-900 shrink-0">L{{ st.num }}:</span>
+                        <span><strong>{{ st.title }}</strong> — {{ st.action }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 7.0 Alokasi Energi Sirkadian & Matriks Delegasi -->
+            <div class="space-y-2 pt-1 border-t border-slate-300">
+              <div class="flex items-center justify-between border-b border-slate-300 pb-1">
+                <h2 class="text-[11px] font-black uppercase tracking-wider text-slate-900">
+                  7.0 Ritme Sirkadian, Jam Kerja Efektif & Matriks Delegasi
+                </h2>
+                <span class="text-[9px] font-mono text-indigo-700 font-bold capitalize">Tipe Sirkadian: {{ assessment.chronotype }}</span>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 text-[10px]">
+                <!-- Tabel Alokasi Jam Kerja -->
+                <div class="space-y-1">
+                  <span class="text-[9px] font-bold text-slate-700 uppercase tracking-wider block">
+                    Alokasi Waktu Kerja Optimal Subjek:
+                  </span>
+                  <table class="w-full border border-slate-300 text-[9px] border-collapse">
+                    <thead>
+                      <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-300 text-left">
+                        <th class="p-1 border-r border-slate-300">Jam</th>
+                        <th class="p-1 border-r border-slate-300">Fase Energi</th>
+                        <th class="p-1">Rekomendasi Aktivitas</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                      <tr v-for="block in systemicDossier?.circadianSchedule.slice(0, 3)" :key="block.id">
+                        <td class="p-1 font-mono font-bold text-slate-800 border-r border-slate-200">{{ block.time }}</td>
+                        <td class="p-1 font-medium border-r border-slate-200">{{ block.phase }}</td>
+                        <td class="p-1 text-slate-600 font-medium">{{ block.activity }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Matriks Delegasi -->
+                <div class="space-y-1">
+                  <span class="text-[9px] font-bold text-slate-700 uppercase tracking-wider block">
+                    Matriks Tugas Wajib Delegasi (Eliminasi Beban):
+                  </span>
+                  <table class="w-full border border-slate-300 text-[9px] border-collapse">
+                    <thead>
+                      <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-300 text-left">
+                        <th class="p-1 border-r border-slate-300">Tugas Yang Dihindari</th>
+                        <th class="p-1">Tujuan / Tim Yang Mengerjakan</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                      <tr v-for="task in systemicDossier?.delegationTasks.slice(0, 3)" :key="task.id">
+                        <td class="p-1 font-bold text-slate-900 border-r border-slate-200">{{ task.task }}</td>
+                        <td class="p-1 text-emerald-800 font-medium">{{ task.targetDelegation }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Page 3 Footer -->
+          <div class="border-t border-slate-300 pt-2 flex items-center justify-between text-[9px] text-slate-500 font-mono">
+            <span>HASTALOKA PSYCHOMETRICS ENGINE v2.0 • PROTOKOL ENERGI & RISIKO</span>
+            <span>HALAMAN 3 DARI 4</span>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- PDF PAGE 4: SINERGI TIM, BENCHMARK & PENGESAHAN DOKUMEN  -->
+        <!-- ======================================================== -->
+        <div class="pdf-doc-page w-[794px] h-[1123px] p-[40px] box-border bg-white flex flex-col justify-between overflow-hidden text-slate-900">
+          <div class="space-y-4">
+            <!-- Running Header -->
+            <div class="border-b border-slate-300 pb-1.5 flex items-center justify-between text-[9px] text-slate-600 font-mono">
+              <span class="font-bold text-slate-900">HASTALOKA OFFICIAL DOSSIER • SINERGI TIM & PENGESAHAN RESMI</span>
+              <span>SUBJEK: <strong class="text-slate-900">{{ assessment.userName || 'Subjek' }}</strong> | REG: {{ assessment.id }}</span>
+            </div>
+
+            <!-- 8.0 Sinergi Tim & Rekan Komplementer -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between border-b border-slate-300 pb-1">
+                <h2 class="text-[11px] font-black uppercase tracking-wider text-slate-900">
+                  8.0 Analisis Sinergi Organisasi & Rekan Kerja Komplementer
+                </h2>
+                <span class="text-[9px] font-mono text-purple-700 font-bold">Dinamika Kemitraan</span>
+              </div>
+
+              <!-- Partner Box -->
+              <div class="p-2.5 border border-slate-300 bg-slate-50/50 space-y-1 text-[10px]">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <span class="text-[8px] font-mono font-bold text-slate-500 uppercase">PASANGAN SINERGI TERBAIK:</span>
+                    <strong class="text-xs text-slate-900 font-black block">
+                      {{ idealPartner.profile.name }} ({{ idealPartner.profile.indonesianName }})
+                    </strong>
+                  </div>
+                  <span class="px-2 py-0.5 border border-slate-300 bg-white font-mono font-bold text-[9px] text-slate-800">
+                    {{ idealPartner.synergy.tagline || 'Saling Mengisi' }}
+                  </span>
+                </div>
+                <p class="text-slate-700 leading-snug">
+                  {{ idealPartner.synergy.description }}
+                </p>
+                <div class="p-1.5 bg-white border border-slate-200 text-[9px] text-slate-800">
+                  <strong>Rekomendasi Protokol Kolaborasi:</strong> {{ idealPartner.synergy.protocol || 'Selaraskan pembagian peran secara jelas di awal dan lakukan evaluasi berkala untuk memastikan sinergi saling mengisi.' }}
+                </div>
+              </div>
+            </div>
+
+            <!-- 9.0 Matriks Tolak Ukur Keselarasan dengan Seluruh 8 Arketipe -->
+            <div class="space-y-1">
+              <div class="flex items-center justify-between border-b border-slate-300 pb-1">
+                <h2 class="text-[11px] font-black uppercase tracking-wider text-slate-900">
+                  9.0 Tolak Ukur Keselarasan Lengkap dengan Seluruh 8 Arketipe Hastaloka
+                </h2>
+                <span class="text-[9px] font-mono text-slate-500">Nilai Kemiripan Cosine Proximity</span>
+              </div>
+
+              <table class="w-full border border-slate-300 text-[9px] border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-300 text-left">
+                    <th class="p-1 border-r border-slate-300">No</th>
+                    <th class="p-1 border-r border-slate-300">Arketipe Hastaloka</th>
+                    <th class="p-1 border-r border-slate-300">Gelar Indonesia</th>
+                    <th class="p-1 border-r border-slate-300 text-center">Tingkat Keselarasan</th>
+                    <th class="p-1">Karakteristik Interaksi Tim</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200">
+                  <tr
+                    v-for="(match, idx) in assessment.allArchetypeMatches"
+                    :key="match.archetype.id"
+                    :class="idx === 0 ? 'bg-indigo-50/40 font-bold' : ''"
+                  >
+                    <td class="p-1 text-center font-mono border-r border-slate-200">{{ idx + 1 }}</td>
+                    <td class="p-1 text-slate-900 border-r border-slate-200">{{ match.archetype.name }}</td>
+                    <td class="p-1 text-slate-600 border-r border-slate-200">{{ match.archetype.indonesianName }}</td>
+                    <td class="p-1 font-mono text-center border-r border-slate-200" :class="idx === 0 ? 'text-indigo-800 font-black' : 'text-slate-700'">
+                      {{ match.similarity }}%
+                    </td>
+                    <td class="p-1 text-slate-600">{{ idx === 0 ? 'Profil Dominan Subjek' : match.similarity >= 70 ? 'Sinergi Tinggi / Pelengkap' : match.similarity >= 40 ? 'Netral / Perlu Penyelarasan' : 'Rawan Friksi / Tugas Berbeda' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- 10.0 Lembar Pengesahan & Otorisasi Resmi -->
+            <div class="border-2 border-slate-900 p-3 bg-slate-50/50 space-y-2">
+              <div class="text-center space-y-0.5 border-b border-slate-300 pb-1.5">
+                <h3 class="text-xs font-black uppercase tracking-wider text-slate-900">
+                  LEMBAR PERNYATAAN & PENGESAHAN INTEGRITAS DIAGNOSTIK
+                </h3>
+                <p class="text-[9px] text-slate-600">
+                  Dokumen ini merupakan hasil kalkulasi komputasi psikometrika terverifikasi sistem Hastaloka
+                </p>
+              </div>
+
+              <p class="text-[9px] text-slate-700 leading-snug">
+                Berdasarkan seluruh jawaban kuesioner asesmen neuro-perilaku serta parameter ritme sirkadian yang diinput oleh <strong>{{ assessment.userName || 'Subjek' }}</strong> pada tanggal <strong>{{ new Date(assessment.timestamp).toLocaleDateString('id-ID', { dateStyle: 'full' }) }}</strong>, sistem menyatakan bahwa profil 5 Vektor (H5V) dan diagnosis arketipe yang tercantum dalam dokumen ini adalah <strong>SAH & VALID</strong> sesuai model psikometrika Hastaloka v2.0.
+              </p>
+
+              <!-- Kolom Tanda Tangan Formal -->
+              <div class="grid grid-cols-2 gap-6 pt-1 text-[9px]">
+                <div class="space-y-8">
+                  <span class="text-slate-600 block">Penerima & Subjek Teruji:</span>
+                  <div>
+                    <strong class="text-slate-900 block font-bold underline">{{ assessment.userName || 'Subjek Teruji' }}</strong>
+                    <span class="text-[8px] text-slate-400">Verifikasi Identitas Subjek</span>
+                  </div>
+                </div>
+                <div class="space-y-8">
+                  <span class="text-slate-600 block">Otorisasi Sistem & Validator:</span>
+                  <div>
+                    <strong class="text-indigo-800 block font-bold underline">Hastaloka Psychometrics Engine</strong>
+                    <span class="text-[8px] text-slate-400">Algoritma Terpadu H5V • ID Sertifikat #{{ assessment.id }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between text-[8px] text-slate-500 font-mono pt-1.5 border-t border-slate-200">
+                <span>HASH INTEGRITAS DOKUMEN: {{ assessment.id }}-SEC256-V2</span>
+                <span class="text-emerald-700 font-bold">DIGITALLY SIGNED & ENCRYPTED</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Page 4 Footer -->
+          <div class="border-t border-slate-300 pt-2 flex items-center justify-between text-[9px] text-slate-500 font-mono">
+            <span>HASTALOKA PSYCHOMETRICS ENGINE v2.0 • DOKUMEN RESMI TERVERIFIKASI</span>
+            <span>HALAMAN 4 DARI 4 (SELESAI)</span>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 </template>

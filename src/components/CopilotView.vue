@@ -22,15 +22,21 @@ import { StorageService } from '../services/storage';
 import type { AssessmentResult, DailyReadinessRecord } from '../types/hastaloka';
 import MobileCopilotView from './MobileCopilotView.vue';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   assessment: AssessmentResult | null;
   readiness: { rt: number; status: string; recommendation: string };
   initialDilemma?: string;
-}>();
+  mode?: 'chat' | 'simulator';
+}>(), {
+  mode: 'chat'
+});
 
 const emit = defineEmits<{
   (e: 'open-settings'): void;
+  (e: 'update:mode', val: 'chat' | 'simulator'): void;
 }>();
+
+const mobileCopilotRef = ref<any>(null);
 
 const activeMode = ref<'simulator' | 'chat'>('simulator');
 const chatSubTab = ref<'form' | 'conversation'>('form');
@@ -296,7 +302,12 @@ function resetChat() {
   StorageService.clearCopilotChatHistory();
   chatMessages.value = [defaultWelcomeMessage];
   chatSubTab.value = 'form';
+  mobileCopilotRef.value?.handleReset();
 }
+
+defineExpose({
+  resetChat
+});
 
 function copyMessage(text: string, idx: number) {
   navigator.clipboard.writeText(text);
@@ -311,9 +322,12 @@ function copyMessage(text: string, idx: number) {
   <!-- MOBILE VIEW (Standard Mobile Chat UI: Full-Edge, Clean Bubbles, Fixed Input) -->
   <div class="block md:hidden">
     <MobileCopilotView
+      ref="mobileCopilotRef"
       :assessment="assessment"
       :readiness="readiness"
       :initial-dilemma="initialDilemma"
+      :mode="mode"
+      @update:mode="emit('update:mode', $event)"
       @open-settings="emit('open-settings')"
     />
   </div>
