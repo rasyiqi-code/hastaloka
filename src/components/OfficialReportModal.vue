@@ -3,7 +3,6 @@ import { ref, computed } from 'vue';
 import {
   Download,
   Loader2,
-  Printer,
   X,
   ShieldCheck,
   FileText
@@ -22,7 +21,6 @@ const emit = defineEmits<{
   (e: 'close'): void;
 }>();
 
-const isPrinting = ref(false);
 const isDownloading = ref(false);
 const reportCanvasRef = ref<HTMLElement | null>(null);
 
