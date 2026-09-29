@@ -5,6 +5,7 @@ import {
   X,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   User,
   Lock
 } from '@lucide/vue';
@@ -157,11 +158,11 @@ const progressPercent = computed(() => {
 
 // Pilihan Skala Likert 1 - 5
 const likertOptions = [
-  { val: 1, label: 'Sangat Tidak Setuju', short: 'Sangat Tidak' },
-  { val: 2, label: 'Kurang Setuju',       short: 'Kurang' },
-  { val: 3, label: 'Netral',              short: 'Netral' },
-  { val: 4, label: 'Setuju',             short: 'Setuju' },
-  { val: 5, label: 'Sangat Setuju',      short: 'Sangat Setuju' },
+  { val: 1, label: 'Sangat Tidak Setuju', short: 'Sangat Tidak', code: 'STS' },
+  { val: 2, label: 'Kurang Setuju',       short: 'Kurang',       code: 'TS' },
+  { val: 3, label: 'Netral',              short: 'Netral',       code: 'N' },
+  { val: 4, label: 'Setuju',             short: 'Setuju',       code: 'S' },
+  { val: 5, label: 'Sangat Setuju',      short: 'Sangat Setuju',code: 'SS' },
 ];
 
 function selectAnswer(questionId: string, val: number) {
@@ -214,19 +215,19 @@ function finishAssessment() {
 
 <template>
   <div
-    class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm"
+    class="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm"
     @click.self="canClose ? emit('close') : null"
   >
-    <div class="relative w-full max-w-2xl max-h-[92vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200/80">
+    <div class="relative w-full max-w-2xl h-[100dvh] sm:h-auto sm:max-h-[92vh] flex flex-col bg-white rounded-none sm:rounded-2xl shadow-none sm:shadow-2xl overflow-hidden border-0 sm:border border-slate-200/80">
 
       <!-- Unified Single-Row Modal Header -->
-      <div class="relative bg-white border-b border-slate-200/80 px-4 sm:px-5 py-3 flex items-center justify-between gap-3">
+      <div class="relative flex-none bg-white border-b border-slate-200/80 px-3.5 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-2.5">
         <!-- Section Pills -->
-        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+        <div class="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar py-0.5">
           <div
             v-for="(sec, idx) in sections"
             :key="sec.key"
-            class="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all shrink-0 cursor-default"
+            class="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold transition-all shrink-0 cursor-default"
             :class="idx === currentSectionIdx
               ? 'bg-indigo-600 text-white shadow-xs'
               : idx < currentSectionIdx
@@ -243,14 +244,14 @@ function finishAssessment() {
           <button
             v-if="canClose"
             @click="emit('close')"
-            class="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer flex items-center justify-center"
+            class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer flex items-center justify-center touch-manipulation"
             title="Tutup Modal"
           >
             <X class="w-4 h-4" />
           </button>
           <div
             v-else
-            class="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full flex items-center gap-1 select-none shadow-xs"
+            class="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 sm:px-2.5 py-1 rounded-full flex items-center gap-1 select-none shadow-xs whitespace-nowrap"
             title="Asesmen wajib diisi untuk membuka fitur sistem"
           >
             <Lock class="w-3 h-3 text-amber-600" />
@@ -268,13 +269,16 @@ function finishAssessment() {
       </div>
 
       <!-- Content Scrollable Body -->
-      <div class="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+      <div class="flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5 space-y-4 sm:space-y-5">
 
-        <!-- Data Subjek (only on section 1) -->
-        <div v-if="currentSectionIdx === 0" class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
-          <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-            <User class="w-3.5 h-3.5" /> Data Subjek Penilaian
-          </h3>
+        <!-- Data Subjek (only on section 1) - Flat on mobile, Card on desktop -->
+        <div v-if="currentSectionIdx === 0" class="space-y-4 sm:space-y-3.5 sm:rounded-xl sm:border sm:border-slate-200/90 sm:bg-slate-50/70 sm:p-4">
+          <div class="flex items-center justify-between pb-1 sm:pb-0">
+            <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+              <User class="w-3.5 h-3.5 text-indigo-600" /> Data Subjek Penilaian
+            </h3>
+            <span class="text-[10px] text-slate-400 font-medium">Identitas & Kronobiologi</span>
+          </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <!-- Nama -->
@@ -284,7 +288,7 @@ function finishAssessment() {
                 v-model="userName"
                 type="text"
                 placeholder="Nama Anda"
-                class="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200 transition-all"
+                class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 sm:bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 focus:bg-white transition-all"
               />
             </div>
 
@@ -296,13 +300,13 @@ function finishAssessment() {
                   v-model.number="userAge"
                   type="number"
                   placeholder="Usia"
-                  class="w-20 px-2.5 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200 transition-all"
+                  class="w-20 px-2.5 py-2.5 text-xs sm:text-sm bg-slate-50 sm:bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 focus:bg-white transition-all text-center"
                 />
                 <input
                   v-model="userProfession"
                   type="text"
                   placeholder="Jabatan / Profesi"
-                  class="flex-1 px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200 transition-all"
+                  class="flex-1 px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 sm:bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 focus:bg-white transition-all"
                 />
               </div>
             </div>
@@ -310,89 +314,100 @@ function finishAssessment() {
             <!-- Jam Tidur -->
             <div class="space-y-1">
               <label class="block text-xs font-semibold text-slate-600">Jam berapa Anda tidur?</label>
-              <select
-                v-model="sleepOnset"
-                class="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200 transition-all cursor-pointer font-medium"
-              >
-                <option value="21:00">21:00 WIB (Lebih Awal)</option>
-                <option value="21:30">21:30 WIB</option>
-                <option value="22:00">22:00 WIB</option>
-                <option value="22:30">22:30 WIB</option>
-                <option value="23:00">23:00 WIB</option>
-                <option value="23:30">23:30 WIB</option>
-                <option value="00:00">00:00 WIB (Tengah Malam)</option>
-                <option value="00:30">00:30 WIB</option>
-                <option value="01:00">01:00 WIB</option>
-                <option value="01:30">01:30 WIB</option>
-                <option value="02:00">02:00 WIB</option>
-                <option value="02:30">02:30 WIB</option>
-                <option value="03:00">03:00 WIB (Larut Malam)</option>
-                <option value="03:30">03:30 WIB</option>
-                <option value="04:00">04:00 WIB</option>
-              </select>
+              <div class="relative">
+                <select
+                  v-model="sleepOnset"
+                  class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 sm:bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 focus:bg-white transition-all cursor-pointer font-medium appearance-none pr-8"
+                >
+                  <option value="21:00">21:00 WIB (Lebih Awal)</option>
+                  <option value="21:30">21:30 WIB</option>
+                  <option value="22:00">22:00 WIB</option>
+                  <option value="22:30">22:30 WIB</option>
+                  <option value="23:00">23:00 WIB</option>
+                  <option value="23:30">23:30 WIB</option>
+                  <option value="00:00">00:00 WIB (Tengah Malam)</option>
+                  <option value="00:30">00:30 WIB</option>
+                  <option value="01:00">01:00 WIB</option>
+                  <option value="01:30">01:30 WIB</option>
+                  <option value="02:00">02:00 WIB</option>
+                  <option value="02:30">02:30 WIB</option>
+                  <option value="03:00">03:00 WIB (Larut Malam)</option>
+                  <option value="03:30">03:30 WIB</option>
+                  <option value="04:00">04:00 WIB</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
+                  <ChevronDown class="w-4 h-4" />
+                </div>
+              </div>
             </div>
 
             <!-- Jam Bangun -->
             <div class="space-y-1">
               <label class="block text-xs font-semibold text-slate-600">Jam berapa Anda bangun?</label>
-              <select
-                v-model="wakeOnset"
-                class="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200 transition-all cursor-pointer font-medium"
-              >
-                <option value="04:30">04:30 WIB (Subuh / Awal)</option>
-                <option value="05:00">05:00 WIB</option>
-                <option value="05:30">05:30 WIB</option>
-                <option value="06:00">06:00 WIB</option>
-                <option value="06:30">06:30 WIB</option>
-                <option value="07:00">07:00 WIB</option>
-                <option value="07:30">07:30 WIB</option>
-                <option value="08:00">08:00 WIB</option>
-                <option value="08:30">08:30 WIB</option>
-                <option value="09:00">09:00 WIB</option>
-                <option value="09:30">09:30 WIB</option>
-                <option value="10:00">10:00 WIB (Siang)</option>
-                <option value="10:30">10:30 WIB</option>
-                <option value="11:00">11:00 WIB</option>
-              </select>
+              <div class="relative">
+                <select
+                  v-model="wakeOnset"
+                  class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 sm:bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 focus:bg-white transition-all cursor-pointer font-medium appearance-none pr-8"
+                >
+                  <option value="04:30">04:30 WIB (Subuh / Awal)</option>
+                  <option value="05:00">05:00 WIB</option>
+                  <option value="05:30">05:30 WIB</option>
+                  <option value="06:00">06:00 WIB</option>
+                  <option value="06:30">06:30 WIB</option>
+                  <option value="07:00">07:00 WIB</option>
+                  <option value="07:30">07:30 WIB</option>
+                  <option value="08:00">08:00 WIB</option>
+                  <option value="08:30">08:30 WIB</option>
+                  <option value="09:00">09:00 WIB</option>
+                  <option value="09:30">09:30 WIB</option>
+                  <option value="10:00">10:00 WIB (Siang)</option>
+                  <option value="10:30">10:30 WIB</option>
+                  <option value="11:00">11:00 WIB</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
+                  <ChevronDown class="w-4 h-4" />
+                </div>
+              </div>
             </div>
           </div>
 
           <!-- Skrining Refleks Jam Biologis (5 Indikator MEQ - Bab 13.3) -->
-          <div class="border-t border-slate-200/80 pt-3 space-y-3">
-            <div class="flex items-center justify-between">
+          <div class="border-t border-slate-200/80 pt-4 sm:pt-3.5 space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
               <h4 class="text-xs font-bold text-slate-800">Skrining Refleks Jam Biologis (5 Indikator)</h4>
-              <span class="text-[10px] text-slate-500">Pilih kondisi biologis yang paling mencerminkan diri Anda:</span>
+              <span class="text-[10px] text-slate-500">Pilih opsi yang paling mencerminkan ritme alami Anda:</span>
             </div>
 
-            <div class="space-y-2.5">
+            <div class="space-y-3.5 sm:space-y-3">
               <div
                 v-for="q in meqQuestions"
                 :key="q.id"
-                class="space-y-1"
+                class="space-y-1.5"
               >
-                <div class="text-xs font-semibold text-slate-700">
+                <div class="text-xs font-semibold text-slate-800 leading-snug">
                   {{ q.text }}
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                <!-- Vertically stacked cards for mobile-first legibility and easy tap target -->
+                <div class="flex flex-col gap-1.5">
                   <button
                     v-for="opt in q.options"
                     :key="opt.code"
                     type="button"
                     @click="meqAnswers[q.id] = opt.score"
-                    class="px-2.5 py-1.5 rounded-lg border text-left text-[11px] transition-all cursor-pointer flex items-start gap-1.5"
+                    class="w-full px-3 py-2.5 rounded-xl border text-left text-xs transition-all cursor-pointer flex items-center gap-2.5 touch-manipulation active:scale-[0.99]"
                     :class="
                       meqAnswers[q.id] === opt.score
                         ? 'bg-indigo-600 border-indigo-600 text-white font-medium shadow-xs'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
+                        : 'bg-slate-50 sm:bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
                     "
                   >
                     <span
-                      class="w-4 h-4 rounded text-[9px] font-bold font-mono flex items-center justify-center shrink-0 mt-0.5"
-                      :class="meqAnswers[q.id] === opt.score ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'"
+                      class="w-5 h-5 rounded-md text-[10px] font-bold font-mono flex items-center justify-center shrink-0"
+                      :class="meqAnswers[q.id] === opt.score ? 'bg-white/20 text-white' : 'bg-slate-200/70 sm:bg-slate-100 text-slate-600'"
                     >
                       {{ opt.code }}
                     </span>
-                    <span class="leading-tight">{{ opt.text }}</span>
+                    <span class="leading-snug flex-1">{{ opt.text }}</span>
                   </button>
                 </div>
               </div>
@@ -401,69 +416,82 @@ function finishAssessment() {
         </div>
 
         <!-- Section Title -->
-        <div>
+        <div class="pt-1">
           <div class="flex items-baseline gap-2 mb-1">
             <span class="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">
               Bagian {{ currentSectionIdx + 1 }} dari {{ sections.length }}
             </span>
           </div>
-          <h3 class="text-base font-extrabold text-slate-900 tracking-tight">{{ sections[currentSectionIdx].title }}</h3>
+          <h3 class="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight">{{ sections[currentSectionIdx].title }}</h3>
           <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">{{ sections[currentSectionIdx].desc }}</p>
         </div>
 
-        <!-- Questions -->
-        <div class="space-y-3">
+        <!-- Questions - Flat list on mobile, Cards on desktop -->
+        <div class="divide-y divide-slate-100 sm:divide-y-0 sm:space-y-3">
           <div
             v-for="q in currentQuestions"
             :key="q.id"
-            class="rounded-xl border border-slate-200 bg-white p-4 space-y-3"
+            class="py-3.5 first:pt-1 sm:py-4 sm:rounded-xl sm:border sm:border-slate-200 sm:bg-white sm:p-4 space-y-2.5 sm:space-y-3"
           >
             <div class="flex items-start gap-2.5">
               <span class="mt-0.5 px-1.5 py-0.5 text-[10px] font-bold font-mono rounded-md bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
                 {{ q.id }}
               </span>
-              <p class="text-xs font-semibold text-slate-800 leading-snug">{{ q.text }}</p>
+              <p class="text-xs sm:text-sm font-semibold text-slate-800 leading-snug">{{ q.text }}</p>
             </div>
 
-            <!-- Likert Scale -->
-            <div class="grid grid-cols-5 gap-1.5">
-              <button
-                v-for="opt in likertOptions"
-                :key="opt.val"
-                type="button"
-                @click="selectAnswer(q.id, opt.val)"
-                class="py-2.5 px-1.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center min-h-[42px]"
-                :class="
-                  answers[q.id] === opt.val
-                    ? 'bg-indigo-600 border-indigo-600 text-white font-semibold shadow-xs'
-                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300 font-medium'
-                "
-              >
-                <span class="text-xs leading-tight text-center">{{ opt.short }}</span>
-              </button>
+            <!-- Likert Scale: 5 buttons with number & psychometric code -->
+            <div class="space-y-1.5">
+              <div class="grid grid-cols-5 gap-1.5 sm:gap-2">
+                <button
+                  v-for="opt in likertOptions"
+                  :key="opt.val"
+                  type="button"
+                  @click="selectAnswer(q.id, opt.val)"
+                  class="py-2 sm:py-2.5 px-1 sm:px-2 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 min-h-[46px] touch-manipulation active:scale-[0.97]"
+                  :class="
+                    answers[q.id] === opt.val
+                      ? 'bg-indigo-600 border-indigo-600 text-white font-semibold shadow-xs'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300 font-medium'
+                  "
+                >
+                  <span class="text-sm font-bold font-mono leading-none">{{ opt.val }}</span>
+                  <span class="text-[9px] sm:text-[11px] leading-tight block truncate max-w-full">
+                    <span class="sm:hidden">{{ opt.code }}</span>
+                    <span class="hidden sm:inline">{{ opt.short }}</span>
+                  </span>
+                </button>
+              </div>
+
+              <!-- Legend hint on mobile -->
+              <div class="flex items-center justify-between text-[10px] text-slate-400 px-1 sm:hidden">
+                <span>1: Sangat Tidak Setuju</span>
+                <span>5: Sangat Setuju</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Modal Footer -->
-      <div class="flex items-center justify-between px-5 py-3.5 border-t border-slate-100 bg-white">
+      <div class="flex-none flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 border-t border-slate-200/80 bg-white pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <button
           v-if="currentSectionIdx > 0"
           @click="prevSection"
-          class="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
+          class="px-3.5 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-xl flex items-center gap-1 cursor-pointer transition-colors touch-manipulation"
         >
-          <ChevronLeft class="w-3.5 h-3.5" /> Sebelumnya
+          <ChevronLeft class="w-4 h-4" />
+          <span>Sebelumnya</span>
         </button>
         <div v-else></div>
 
         <button
           @click="nextSection"
-          class="btn-exec-primary px-4 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer shadow-xs"
+          class="btn-exec-primary px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-sm touch-manipulation active:scale-[0.98]"
         >
           <span v-if="currentSectionIdx < sections.length - 1">Lanjut Berikutnya</span>
           <span v-else>Hitung Hasil Diagnostik</span>
-          <ChevronRight class="w-3.5 h-3.5" />
+          <ChevronRight class="w-4 h-4" />
         </button>
       </div>
 
