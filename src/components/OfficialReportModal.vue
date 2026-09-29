@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import {
+  Download,
+  Loader2,
   Printer,
   X,
   ShieldCheck,
@@ -21,6 +23,8 @@ const emit = defineEmits<{
 }>();
 
 const isPrinting = ref(false);
+const isDownloading = ref(false);
+const reportCanvasRef = ref<HTMLElement | null>(null);
 
 const systemicDossier = computed(() => getSystemicDiagnostic(props.assessment));
 
@@ -46,22 +50,125 @@ const idealPartner = computed(() => {
   };
 });
 
-async function handlePrintOrExportPDF() {
-  isPrinting.value = true;
-  if (window.electronAPI && typeof window.electronAPI.printToPDF === 'function') {
-    try {
-      const res = await window.electronAPI.printToPDF();
-      if (res.success) {
-        alert(`Laporan PDF berhasil disimpan ke: ${res.filePath}`);
-      }
-    } catch (err) {
-      console.error(err);
-      window.print();
+async function handleDownloadPDF() {
+  if (isDownloading.value) return;
+  isDownloading.value = true;
+
+  try {
+    const element = reportCanvasRef.value;
+    if (!element) throw new Error('Elemen dokumen tidak ditemukan');
+
+    // Dynamic import to keep bundle light
+    // @ts-ignore
+    const html2canvasModule = await import('html2canvas-pro');
+    const html2canvas = html2canvasModule.default || html2canvasModule;
+    const { jsPDF } = await import('jspdf');
+
+    // 1. Capture element to high-res canvas (supports modern CSS / oklch)
+    const fullCanvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff'
+    });
+
+    const pdf = new jsPDF({
+      unit: 'mm',
+      format: 'a4',
+      orientation: 'portrait'
+    });
+
+    const pageWidth = 210; // A4 mm
+    const pageHeight = 297; // A4 mm
+    const margin = 10; // 10mm margin
+    const contentWidth = pageWidth - (margin * 2); // 190mm
+    const contentHeight = pageHeight - (margin * 2); // 277mm
+
+    // Scale factor from element DOM pixels to fullCanvas pixels
+    const domToCanvasScale = fullCanvas.width / element.offsetWidth;
+    const pxPerMm = fullCanvas.width / contentWidth;
+    const maxPageHeightCanvasPx = contentHeight * pxPerMm;
+
+    // Detect section boundaries from top-level children to prevent cutting across cards
+    const children = Array.from(element.children) as HTMLElement[];
+    const elementRect = element.getBoundingClientRect();
+    
+    const breakPoints: number[] = [];
+    for (const child of children) {
+      const childRect = child.getBoundingClientRect();
+      const relativeBottom = (childRect.bottom - elementRect.top) * domToCanvasScale;
+      breakPoints.push(relativeBottom);
     }
-  } else {
+
+    let currentStartPx = 0;
+    let pageIndex = 0;
+
+    while (currentStartPx < fullCanvas.height) {
+      const maxEndPx = currentStartPx + maxPageHeightCanvasPx;
+      
+      let currentEndPx = maxEndPx;
+      if (maxEndPx >= fullCanvas.height) {
+        currentEndPx = fullCanvas.height;
+      } else {
+        // Find best break point that keeps section intact
+        const validBreaks = breakPoints.filter(
+          bp => bp > currentStartPx + (60 * domToCanvasScale) && bp <= maxEndPx
+        );
+        if (validBreaks.length > 0) {
+          currentEndPx = validBreaks[validBreaks.length - 1];
+        }
+      }
+
+      const sliceHeight = currentEndPx - currentStartPx;
+      if (sliceHeight <= 0) break;
+
+      // Create slice canvas
+      const pageCanvas = document.createElement('canvas');
+      pageCanvas.width = fullCanvas.width;
+      pageCanvas.height = sliceHeight;
+
+      const ctx = pageCanvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+        ctx.drawImage(
+          fullCanvas,
+          0,
+          currentStartPx,
+          fullCanvas.width,
+          sliceHeight,
+          0,
+          0,
+          pageCanvas.width,
+          sliceHeight
+        );
+      }
+
+      if (pageIndex > 0) {
+        pdf.addPage();
+      }
+
+      const sliceHeightMm = (sliceHeight / fullCanvas.width) * contentWidth;
+      const imgData = pageCanvas.toDataURL('image/jpeg', 0.98);
+      pdf.addImage(imgData, 'JPEG', margin, margin, contentWidth, sliceHeightMm);
+
+      currentStartPx = currentEndPx;
+      pageIndex++;
+    }
+
+    const safeName = (props.assessment.userName || 'Subjek')
+      .trim()
+      .replace(/[^a-zA-Z0-9_\u00C0-\u017F\s-]/g, '')
+      .replace(/\s+/g, '_');
+    const filename = `Laporan-Resmi-Hastaloka-${safeName}.pdf`;
+
+    pdf.save(filename);
+  } catch (err) {
+    console.error('Direct PDF export error:', err);
     window.print();
+  } finally {
+    isDownloading.value = false;
   }
-  isPrinting.value = false;
 }
 </script>
 
@@ -82,10 +189,14 @@ async function handlePrintOrExportPDF() {
         </div>
         <div class="flex items-center gap-2 sm:gap-3 shrink-0">
           <button
-            @click="handlePrintOrExportPDF"
-            class="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg sm:rounded-xl shadow-md shadow-indigo-600/25 transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer"
+            :disabled="isDownloading"
+            @click="handleDownloadPDF"
+            class="px-3.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 disabled:opacity-75 disabled:cursor-wait rounded-lg sm:rounded-xl shadow-md shadow-indigo-600/25 transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer"
+            title="Download file PDF langsung ke perangkat"
           >
-            <Printer class="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span>Cetak / PDF</span>
+            <Loader2 v-if="isDownloading" class="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+            <Download v-else class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>{{ isDownloading ? 'Membuat PDF...' : 'Download PDF' }}</span>
           </button>
           <button
             @click="emit('close')"
@@ -98,7 +209,10 @@ async function handlePrintOrExportPDF() {
       </div>
 
       <!-- Printable Document Canvas -->
-      <div class="flex-1 overflow-y-auto px-4 py-6 sm:p-10 space-y-6 sm:space-y-8 bg-white text-slate-900 print:overflow-visible print:p-0 print:space-y-6">
+      <div
+        ref="reportCanvasRef"
+        class="flex-1 overflow-y-auto px-4 py-6 sm:p-10 space-y-6 sm:space-y-8 bg-white text-slate-900 print:overflow-visible print:p-0 print:space-y-6"
+      >
 
         <!-- KOP DOKUMEN RESMI -->
         <div class="border-b-2 border-slate-900 pb-5 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -539,13 +653,14 @@ async function handlePrintOrExportPDF() {
 </template>
 
 <style scoped>
+.print-break-inside-avoid {
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+}
+
 @media print {
   .no-print {
     display: none !important;
-  }
-  .print-break-inside-avoid {
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
   }
 }
 </style>
