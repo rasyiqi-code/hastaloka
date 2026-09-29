@@ -1,0 +1,43 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Node dependencies & outputs
+node_modules
+dist
+dist-ssr
+*.local
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+
+# Build Releases & Binaries (Released via GitHub Releases)
+release/
+*.exe
+*.apk
+*.keystore
+
+# Android build outputs & local configs
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+android/local.properties
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

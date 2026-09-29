@@ -1,0 +1,269 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #f8fafc;
+    color: #0f172a;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.012em;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Prodify Aesthetic Cards */
+.prodify-card {
+  background: #ffffff;
+  border-radius: 1.25rem; /* 20px */
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.03), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.prodify-card-hover:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.06), 0 4px 10px -2px rgba(15, 23, 42, 0.03);
+}
+
+/* Prodify Executive Buttons */
+.btn-exec-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
+  color: #ffffff;
+  border-radius: 9999px;
+  font-weight: 700;
+  box-shadow: 0 4px 14px -1px rgba(99, 102, 241, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-exec-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4f46e5 0%, #6d28d9 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px -1px rgba(99, 102, 241, 0.5);
+}
+
+.btn-exec-primary:active:not(:disabled) {
+  transform: translateY(0px) scale(0.98);
+}
+
+.btn-exec-secondary {
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-exec-secondary:hover:not(:disabled) {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+/* Delicate Ambient Grid Pattern */
+.bg-prodify-grid {
+  background-image: radial-gradient(rgba(203, 213, 225, 0.6) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Floating AI Button Pulse */
+.floating-copilot-btn {
+  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  box-shadow: 0 8px 24px -4px rgba(99, 102, 241, 0.45);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.floating-copilot-btn:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 12px 28px -4px rgba(99, 102, 241, 0.55);
+}
+
+/* Sidebar Gradient Box */
+.sidebar-promo-box {
+  background: linear-gradient(145deg, #6366f1 0%, #7c3aed 60%, #4338ca 100%);
+}
+
+/* Text Gradient Cyan / Blue */
+.text-gradient-cyan {
+  background: linear-gradient(135deg, #0284c7 0%, #06b6d4 50%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Copilot Markdown Prose Styling */
+.prose-copilot {
+  line-height: 1.65;
+  color: #1e293b;
+}
+
+.prose-copilot h1,
+.prose-copilot h2,
+.prose-copilot h3,
+.prose-copilot h4 {
+  color: #0f172a;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-top: 1.15rem;
+  margin-bottom: 0.45rem;
+}
+
+.prose-copilot h1 {
+  font-size: 1.15rem;
+}
+
+.prose-copilot h2 {
+  font-size: 1.05rem;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 0.35rem;
+}
+
+.prose-copilot h3 {
+  font-size: 0.95rem;
+}
+
+.prose-copilot h4 {
+  font-size: 0.875rem;
+}
+
+.prose-copilot p {
+  margin-top: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+
+.prose-copilot strong {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.prose-copilot em {
+  font-style: italic;
+  color: #334155;
+}
+
+.prose-copilot ul {
+  list-style-type: disc;
+  margin-left: 1.25rem;
+  margin-top: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+
+.prose-copilot ol {
+  list-style-type: decimal;
+  margin-left: 1.25rem;
+  margin-top: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+
+.prose-copilot li {
+  margin-bottom: 0.25rem;
+}
+
+.prose-copilot hr {
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  margin: 1rem 0;
+}
+
+.prose-copilot blockquote {
+  border-left: 3px solid #6366f1;
+  padding-left: 0.85rem;
+  color: #475569;
+  font-style: italic;
+  margin: 0.75rem 0;
+}
+
+.prose-copilot code {
+  font-family: var(--font-mono);
+  background: #f1f5f9;
+  color: #4338ca;
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+}
+
+.prose-copilot pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.85rem;
+  border-radius: 0.75rem;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+.prose-copilot table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.85rem 0;
+  font-size: 0.8rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.prose-copilot th {
+  background-color: #f8fafc;
+  color: #1e293b;
+  font-weight: 700;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.prose-copilot td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+}
+
+.prose-copilot tr:nth-child(even) td {
+  background-color: rgba(248, 250, 252, 0.6);
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .prodify-card {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+  }
+}
