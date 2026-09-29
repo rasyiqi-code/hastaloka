@@ -21,7 +21,8 @@ import {
   Lock,
   ShieldAlert,
   CheckCircle2,
-  Info
+  Info,
+  Settings
 } from '@lucide/vue';
 
 // 3 Tab Utama: Home, Copilot, Insight
@@ -154,31 +155,54 @@ function handleQuickSimulate(text: string) {
 
     <!-- Main Workspace Area -->
     <div class="flex-1 flex flex-col min-w-0 bg-[#f8fafc] bg-prodify-grid">
-      <!-- Mobile Top Navigation Header -->
-      <div class="md:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200">
-        <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold">
-            <Compass class="w-4 h-4 text-slate-100" />
+      <!-- Mobile Top Navigation Header (Mobile-First Native App Bar) -->
+      <header
+        class="md:hidden sticky top-0 z-30 flex items-center justify-between px-3.5 py-2.5 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-2xs"
+        style="padding-top: max(env(safe-area-inset-top, 0px), 0.65rem);"
+      >
+        <!-- Brand Logo & Version -->
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+            <Compass class="w-4 h-4 text-white" />
           </div>
-          <span class="font-extrabold text-sm text-slate-900 font-sans tracking-tight">HASTALOKA</span>
+          <div class="flex items-baseline gap-1.5">
+            <span class="font-black text-sm text-slate-900 font-sans tracking-tight">HASTALOKA</span>
+            <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/80">v2.0</span>
+          </div>
         </div>
 
-        <div class="flex items-center gap-1">
+        <!-- Right Quick Actions -->
+        <div class="flex items-center gap-1.5">
+          <!-- User Archetype Badge (Clickable to open profile/re-test) -->
+          <button
+            v-if="currentAssessment"
+            @click="isAssessmentModalOpen = true"
+            class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200/80 text-xs font-bold text-slate-800 transition-colors cursor-pointer border border-slate-200/80 shadow-2xs active:scale-95"
+            title="Klik untuk lihat / tes ulang profil"
+          >
+            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+            <span class="truncate max-w-[90px] text-[11px]">{{ currentAssessment.primaryArchetype.name }}</span>
+          </button>
+
+          <!-- Settings (AI Key & Engine Config) -->
+          <button
+            @click="isAISettingsModalOpen = true"
+            class="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer active:scale-95"
+            title="Pengaturan AI & Kunci API"
+          >
+            <Settings class="w-4 h-4" />
+          </button>
+
+          <!-- Info / About -->
           <button
             @click="isAboutModalOpen = true"
-            class="p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+            class="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer active:scale-95"
             title="Tentang Hastaloka"
           >
-            <Info class="w-5 h-5" />
-          </button>
-          <button
-            @click="isMobileSidebarOpen = !isMobileSidebarOpen"
-            class="p-2 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
-          >
-            <Menu class="w-5 h-5" />
+            <Info class="w-4 h-4" />
           </button>
         </div>
-      </div>
+      </header>
 
       <!-- Main Canvas Scroll Area -->
       <main class="flex-1 p-0 sm:p-8 lg:p-10 pb-24 sm:pb-8 lg:pb-10 overflow-y-auto">
@@ -263,8 +287,8 @@ function handleQuickSimulate(text: string) {
         />
       </main>
 
-      <!-- Bottom Minimalist Footer -->
-      <footer class="px-8 py-3.5 border-t border-slate-200/80 bg-white/70 text-[11px] text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <!-- Bottom Minimalist Footer (Desktop Only) -->
+      <footer class="hidden md:flex px-8 py-3.5 border-t border-slate-200/80 bg-white/70 text-[11px] text-slate-500 flex-col sm:flex-row items-center justify-between gap-2">
         <div>
           HASTALOKA Enterprise v2.0 • Sistem Pemetaan Potensi, Karier & Navigasi Keputusan Berbasis Sains
         </div>
