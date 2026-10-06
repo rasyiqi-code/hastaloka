@@ -81,12 +81,15 @@ export function calculateCosineSimilarity(u: VectorScore, ak: VectorScore): numb
   const r = dotProduct / (Math.sqrt(varU) * Math.sqrt(varAk));
 
   // Konversi rentang korelasi r [-1.0 s/d +1.0] ke persentase kecocokan intuitif [0% s/d 100%]
-  // r = 1.0  -> 100% (kecocokan pola sempurna)
-  // r = 0.5  -> 75%  (kecocokan kuat)
-  // r = 0.0  -> 50%  (netral / tidak berkorelasi)
-  // r = -0.5 -> 25%  (pola berlawanan)
-  // r = -1.0 -> 0%   (sangat kontras)
-  const percentage = Math.round(((r + 1) / 2) * 100);
+  // Menggunakan non-linear contrast scaling (kuadrat normalisasi) agar daya beda tajam dan tidak menumpuk di 60-90%:
+  // - r = 1.0  -> 100% (kecocokan pola sempurna)
+  // - r = 0.8  -> 81%  (kecocokan sangat kuat)
+  // - r = 0.5  -> 56%  (kecocokan moderat)
+  // - r = 0.0  -> 25%  (netral / tidak berkorelasi)
+  // - r = -0.5 -> 6%   (pola berlawanan)
+  // - r = -1.0 -> 0%   (sangat kontras)
+  const rNorm = Math.max(0, Math.min(1, (r + 1) / 2));
+  const percentage = Math.round(Math.pow(rNorm, 2.0) * 100);
   return Math.min(100, Math.max(0, percentage));
 }
 

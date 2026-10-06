@@ -76,7 +76,7 @@ const pilarMap: Record<string, 1 | 2 | 3 | 4 | undefined> = {
       </div>
 
       <!-- Tab Content -->
-      <div class="p-6 sm:p-8">
+      <div class="p-4 sm:p-8">
 
         <!-- TAB: ANALISIS VEKTOR -->
         <div v-if="activeTab === 'vectors'" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

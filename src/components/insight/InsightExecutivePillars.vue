@@ -131,7 +131,7 @@ defineProps<{
 
       <div class="pl-4 border-l-2 border-rose-300">
         <p class="text-xs text-slate-700 leading-relaxed font-normal">
-          Kekuatan terbesar Anda menyimpan sisi bayangan: terkadang cepat bosan dengan rutinitas panjang atau tergoda membuka terlalu banyak hal baru sekaligus. Berikut 3 langkah mudah untuk mencegah hal itu terjadi.
+          Setiap kelebihan alami selalu menyimpan sisi bayangan jika tidak disadari. Kenali titik lengah bawah sadar Anda di bawah ini dan ikuti 3 langkah mudah agar tidak menghambat langkah Anda.
         </p>
       </div>
 

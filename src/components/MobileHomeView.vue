@@ -36,11 +36,11 @@ const vectorGoals = computed(() => {
   if (!props.assessment) return [];
   const v = props.assessment.vectorScores;
   return [
-    { key: 'drive', label: 'Daya Aksi (Drive)', category: 'Inisiatif & Momentum', val: v.drive, color: 'bg-cyan-500' },
-    { key: 'adaptability', label: 'Kelenturan (Adaptasi)', category: 'Fleksibilitas Sosial', val: v.adaptability, color: 'bg-cyan-500' },
-    { key: 'connectivity', label: 'Relasi (Koneksi)', category: 'Modal Sosial & Persuasi', val: v.connectivity, color: 'bg-indigo-500' },
-    { key: 'synthesis', label: 'Visi Pola (Sintesis)', category: 'Logika & Tren Makro', val: v.synthesis, color: 'bg-amber-400' },
-    { key: 'stability', label: 'Keteraturan (Stabilitas)', category: 'Regulasi SOP & Detail', val: v.stability, color: 'bg-rose-400' },
+    { key: 'drive', label: 'Daya Aksi (Drive)', category: 'Keberanian & Inisiatif', val: v.drive, color: 'bg-cyan-500' },
+    { key: 'adaptability', label: 'Kelenturan (Adaptasi)', category: 'Luwes & Cepat Menyesuaikan', val: v.adaptability, color: 'bg-cyan-500' },
+    { key: 'connectivity', label: 'Relasi (Koneksi)', category: 'Hubungan & Kerja Sama', val: v.connectivity, color: 'bg-indigo-500' },
+    { key: 'synthesis', label: 'Visi Pola (Sintesis)', category: 'Melihat Gambaran Besar', val: v.synthesis, color: 'bg-amber-400' },
+    { key: 'stability', label: 'Keteraturan (Stabilitas)', category: 'Disiplin & Ketelitian', val: v.stability, color: 'bg-rose-400' },
   ];
 });
 

@@ -1,4 +1,5 @@
 import type { AssessmentResult, DailyReadinessRecord } from '../types/hastaloka';
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
 
 export interface AIProviderConfig {
   provider: 'ollama_cloud' | 'groq' | 'gemini' | 'deepseek' | 'openai' | 'openrouter' | 'custom';
@@ -85,7 +86,8 @@ const BURIED_OLLAMA_API_KEY = (import.meta as any).env?.VITE_OLLAMA_API_KEY || '
 /**
  * Universal Request Dispatcher:
  * - Di Electron: Lewat IPC bridge bawaan Node.js (0 CORS).
- * - Di Web Browser: Lewat /ollama-proxy jika memanggil ollama.com agar tidak kena blokir CORS browser.
+ * - Di Android APK (Capacitor): Lewat CapacitorHttp native Android OkHttp (0 CORS, bypass WebView).
+ * - Di Web Browser Dev: Lewat /ollama-proxy jika memanggil ollama.com agar tidak kena blokir CORS browser.
  */
 async function dispatchAIRequest(
   endpoint: string,
@@ -106,9 +108,42 @@ async function dispatchAIRequest(
     return { ok: false, status: res.status, errorText: res.error || JSON.stringify(res.data) };
   }
 
-  // 2. Web Browser Proxy Bypasser
+  // 2. Android APK / Native Capacitor HTTP Bridge (Bebas kendala CORS WebView)
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const res = await CapacitorHttp.request({
+        url: endpoint,
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        data: body,
+      });
+
+      let resData = res.data;
+      if (typeof resData === 'string') {
+        try {
+          resData = JSON.parse(resData);
+        } catch {
+          // Tetap gunakan string jika bukan format JSON
+        }
+      }
+
+      if (res.status >= 200 && res.status < 300) {
+        return { ok: true, status: res.status, data: resData };
+      }
+
+      const errorText = resData?.error?.message || resData?.error || (typeof resData === 'string' ? resData : JSON.stringify(resData));
+      return { ok: false, status: res.status, errorText };
+    } catch (err: any) {
+      return { ok: false, status: 0, errorText: err.message || String(err) };
+    }
+  }
+
+  // 3. Web Browser Proxy Bypasser (Hanya aktif di Vite Dev Server di Komputer)
   let resolvedUrl = endpoint;
-  if (resolvedUrl.startsWith('https://ollama.com')) {
+  if (import.meta.env.DEV && resolvedUrl.startsWith('https://ollama.com')) {
     resolvedUrl = resolvedUrl.replace('https://ollama.com', '/ollama-proxy');
   }
 
@@ -121,7 +156,12 @@ async function dispatchAIRequest(
 
     if (!response.ok) {
       const errorText = await response.text();
-      return { ok: false, status: response.status, errorText };
+      let parsedError = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        parsedError = errorJson?.error?.message || errorJson?.error || errorText;
+      } catch {}
+      return { ok: false, status: response.status, errorText: parsedError };
     }
 
     const data = await response.json();
@@ -222,6 +262,16 @@ PRINSIP RESPON:
       const cleanBaseUrl = config.baseUrl.replace(/\/+$/, '');
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       const effectiveKey = this.getEffectiveApiKey(config);
+
+      // Validasi awal: Jika provider non-lokal belum diisi API Key
+      if (config.provider !== 'ollama_cloud' && config.provider !== 'custom' && (!effectiveKey || effectiveKey.length < 5)) {
+        const providerName = DEFAULT_AI_PROVIDERS[config.provider]?.name || config.provider;
+        return {
+          success: false,
+          message: `API Key untuk ${providerName} belum diisi. Silakan masukkan API Key Anda di kolom yang tersedia.`
+        };
+      }
+
       if (effectiveKey) headers['Authorization'] = `Bearer ${effectiveKey}`;
 
       const isOllamaNative = cleanBaseUrl.endsWith('/api');

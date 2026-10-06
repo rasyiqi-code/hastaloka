@@ -1,5 +1,13 @@
 {
   "appId": "com.hastaloka.app",
   "appName": "Hastaloka",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  },
+  "server": {
+    "cleartext": true
+  }
 }
